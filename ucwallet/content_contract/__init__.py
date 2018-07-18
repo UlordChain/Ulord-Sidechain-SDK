@@ -6,19 +6,12 @@
 # @Email   : httpservlet@yeah.net
 # @Des     :
 
-# -*- coding: utf-8 -*-
-# Copyright (c) 2016-2018 The Ulord Core Developers
-#
-# @Date    : 2018/7/7
-# @Author  : Shu [Ulord DevTeam]
-# @Email   : httpservlet@yeah.net
-# @Des     :
 import random
 import json
 import os
 from web3 import Web3
 from web3 import HTTPProvider
-from solc import compile_source
+
 
 ULORD_PROVIDER = "http://192.168.14.197:44444"
 USH_TOKEN_ADDRESS = '0xa0544b7124c36d50f2580a67750f10cd5a16056c'

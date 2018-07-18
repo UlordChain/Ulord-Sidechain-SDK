@@ -6,6 +6,12 @@ __pycache__/
 # pycharm
 .idea
 
+# udfs
+udfs/config
+udfs/temp
+udfs/port.txt
+udfs/config.json
+
 # C extensions
 *.so
 
