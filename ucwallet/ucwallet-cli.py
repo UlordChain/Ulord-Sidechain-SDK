@@ -27,7 +27,7 @@ class UCwallet():
     log = None
     history = None
 
-    def __init__(self,keystorefile, keystore_pwd, **kwargs):
+    def __init__(self, keystorefile, keystore_pwd, **kwargs):
         """init a ucwallet"""
         self.content_contract = ContentContract(
             keystorefile=keystorefile,
@@ -39,14 +39,15 @@ class UCwallet():
 
     def _get_commands(self):
         """get current commands"""
-        self.BASIC_COMMANDS = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if not command[0].startswith('_')]
+        self.BASIC_COMMANDS = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if
+                               not command[0].startswith('_')]
 
-    def _load(self, logfile=os.path.join(PACKAGE_ROOT,'ucwallet.log')):
+    def _load(self, logfile=os.path.join(PACKAGE_ROOT, 'ucwallet.log')):
         """加载cli一些必要的配置文件"""
         if self.logfile:
-            self.logfile =logfile
+            self.logfile = logfile
         else:
-            self.logfile = os.path.join(PACKAGE_ROOT,'ucwallet.log')
+            self.logfile = os.path.join(PACKAGE_ROOT, 'ucwallet.log')
         self.log = logging.getLogger('ucwallet')
         # self.history = 'history.txt'
         # setting log module todo set log max file
@@ -114,7 +115,7 @@ class UCwallet():
                     break
                 except Exception as e:
                     print(e)
-                    break
+                    # break
         except Exception as e:
             self.log.error("Error do while:{}".format(e))
             self._info('Goodbye!')
@@ -138,7 +139,8 @@ class UCwallet():
 
     def publish_resource(self, udfs_hash, author_address, price, deposit, t=1):
         """发布资源"""
-        return self.content_contract.publish_resource(udfs_hash=udfs_hash, author_address=author_address, price=price, deposit=deposit, t=t)
+        return self.content_contract.publish_resource(udfs_hash=udfs_hash, author_address=author_address, price=price,
+                                                      deposit=deposit, t=t)
 
     def transfer_tokens(self, addresses, qualitys):
         """多地址结算"""
@@ -170,16 +172,28 @@ class UCwallet():
         """
         return self.udfs_helper.upload(file_path)
 
+    def set_udfs_ip(self, ip, port):
+        """修改udfs的ip"""
+        self.udfs_helper._config(host=ip, port=port)
+        return "更换成功"
+
+    def exit(self):
+        """退出"""
+        sys.exit(-1)
+
+    def downloadhash(self, filehash, filepath=None, Debug=False):
+        """从udfs上下载文件"""
+        return self.udfs_helper.downloadhash(filehash, filepath, Debug)
+
 
 @click.command()
 @click.help_option('-h', '--help')
 @click.version_option(__version__, '-v', '--version', is_flag=True, help="ucwallet版本信息")
-@click.option('-logfile',type=click.Path(), help='日志文件位置(全路径)')
+@click.option('-logfile', type=click.Path(), help='日志文件位置(全路径)')
 @click.option('--keystorefile', type=click.Path(), prompt='私钥文件位置(全路径)', help='私钥文件位置(全路径)')
 @click.option('--keystore_pwd', prompt='私钥密码', help='私钥密码')
 def cli(keystorefile, keystore_pwd, logfile):
     """ucwallet ---- ulord 侧链内容钱包"""
-    #
     # check keystorefile
     if not os.path.isfile(keystorefile):
         click.echo(click.style(
@@ -197,5 +211,5 @@ def cli(keystorefile, keystore_pwd, logfile):
 
 if __name__ == '__main__':
     cli()
-    # ucwallet = UCwallet(keystorefile=r"E:\ulord\Ulord-Sidechain-SDK-py-\ucwallet\content_contract\resources\keystore\haibo.json", keystore_pwd="12345678")
+    # ucwallet = UCwallet(keystorefile=r"./content_contract/resources/keystore/haibo.json", keystore_pwd="12345678")
     # ucwallet._run_cli()
