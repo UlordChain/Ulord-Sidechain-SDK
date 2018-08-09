@@ -1,0 +1,79 @@
+{
+  "deploy": {
+    "sortkeys": [
+      "Token",
+      "ClaimDB",
+      "OrderDB",
+      "Payment",
+      "CenterPublish",
+      "AuthorModule",
+      "AdminModule",
+      "MulTransfer"
+    ],
+    "Token": [
+      [],
+      [
+        50000000000000000000000000,
+        "BlogDemo",
+        18,
+        "BD"
+      ]
+    ],
+    "ClaimDB": [
+      [],
+      []
+    ],
+    "OrderDB": [
+      [],
+      []
+    ],
+    "Payment": [
+      [
+        "Token"
+      ],
+      []
+    ],
+    "CenterPublish": [
+      [
+        "Token",
+        "ClaimDB",
+        "OrderDB",
+        "Payment"
+      ],
+      [
+        "0x761906A41D66Bb5f6c7F7588797C1893fa498396"
+      ]
+    ],
+    "AuthorModule": [
+      [
+        "CenterPublish"
+      ],
+      []
+    ],
+    "AdminModule": [
+      [
+        "ClaimDB"
+      ],
+      []
+    ],
+    "MulTransfer": [
+      [
+        "Token"
+      ],
+      []
+    ]
+  },
+  "activate": {
+    "ClaimDB": [
+      "CenterPublish"
+    ],
+    "CenterPublish": [
+      "AuthorModule"
+    ],
+    "Payment": [
+      "AuthorModule"
+    ]
+  }
+}
+
+

@@ -4,10 +4,9 @@
 # @Author: Ulord_PuJi
 # @Date  : 2018/7/13 0013
 import os
-from setuptools import setup,find_packages
+from setuptools import setup, find_packages
 
-
-requires=[
+requires = [
 
 ]
 
@@ -35,7 +34,7 @@ setup(
         'console_scripts': [
             'ucwallet = ucwallet.uwallet-cli:cli'
         ]},
-    Platform=['win32','linux'],
+    Platform=['win32', 'linux'],
     # python_requires='>=2.6, <3',
     classifiers=[
         # How mature is this project? Common values are

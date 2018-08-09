@@ -1,6 +1,6 @@
 # coding=utf-8
 # Copyright (c) 2016-2018 The Ulord Core Developers
-# @File  : ucwallet-cli.py
+# @File  : ucwallet_cli.py
 # @Author: Ulord_PuJi
 # @Date  : 2018/7/13 0013
 import sys
@@ -13,6 +13,8 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory  # 历史记录
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory  # 自动联想
 from prompt_toolkit.completion import WordCompleter  # 词汇建议
+
+from deploy_contract import Deploy
 
 sys.path.insert(0, os.path.dirname(os.getcwd()))
 from ucwallet import __version__
@@ -185,6 +187,17 @@ class UCwallet():
         """从udfs上下载文件"""
         return self.udfs_helper.downloadhash(filehash, filepath, Debug)
 
+    def deploy_contract(self):
+        """部署 Ushare 合约"""
+        d = Deploy(
+            config="deploy_contract.json",
+            spath="sols",
+            privateKey=self.content_contract._private_key,
+            provider="https://rinkeby.infura.io/v3/7226f0ad456a4f1189fee961011684ac",
+        )
+        d.deploy()
+        return True
+
 
 @click.command()
 @click.help_option('-h', '--help')
@@ -210,6 +223,6 @@ def cli(keystorefile, keystore_pwd, logfile):
 
 
 if __name__ == '__main__':
-    cli()
-    # ucwallet = UCwallet(keystorefile=r"./content_contract/resources/keystore/haibo.json", keystore_pwd="12345678")
-    # ucwallet._run_cli()
+    # cli()
+    ucwallet = UCwallet(keystorefile=r"./content_contract/resources/keystore/haibo.json", keystore_pwd="12345678")
+    ucwallet._run_cli()
