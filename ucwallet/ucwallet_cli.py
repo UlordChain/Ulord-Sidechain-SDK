@@ -193,7 +193,6 @@ class UCwallet():
             config="deploy_contract.json",
             spath="sols",
             privateKey=self.content_contract._private_key,
-            provider="https://rinkeby.infura.io/v3/7226f0ad456a4f1189fee961011684ac",
         )
         d.deploy()
         return True

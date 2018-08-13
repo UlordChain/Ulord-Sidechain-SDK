@@ -2,11 +2,13 @@
 
 ### 一. 安装solidity 编译器
 
-- [这里](https://github.com/ethereum/solidity/releases)下载对应平台的二进制包, 解压添加到系统环境变量中, 在终端中输入`solc`查看命令是否可用
+- [这里](https://github.com/ethereum/solidity/releases)下载对应平台的二进制包(如果页面显示不正常请手动贴入URL刷新)
+- 解压添加到系统环境变量中
+- 在终端中输入`solc`查看命令是否可用 
 
 ### 二. 在官方开源项目中下载所有合约源码
 
-- [这里](http://192.168.14.240:3000/liuqiping/Ushare/src/master/contract)
+- [这里](http://192.168.14.240:3000/liuqiping/Ushare/)
 
 ### 三. 根据官方部署步骤说明 填写配置文件
 
@@ -65,19 +67,9 @@
   }
   ```
 
-#### 四. 安装python运行所需的包
 
-- web3: `pip install web3`
-- py-solc: `pip install py-solc`
-- appdirs: `pip instal appdirs`
 
-### 五. 运行程序
-
-安装所需的第三方Lib:
-
-- web3: `pip install web3`
-- py-solc: `pip install py-solc`
-- appdirs: `pip instal appdirs`
+### 四. 运行程序
 
 修改参数:
 
@@ -90,7 +82,7 @@
 
 运行程序: `python deploy_contract.py`
 
-### 六. 程序生成的配置文件路径
+### 五. 程序生成的配置文件路径
 
 包括 abi, bin, 合约地址文件, 钱包文件等
 

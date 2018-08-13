@@ -16,6 +16,8 @@ from solc import compile_files
 from web3.middleware import geth_poa_middleware
 from appdirs import AppDirs
 
+import dconfig
+
 USER_DATA_DIR = AppDirs("UlordPySdk", "").user_data_dir
 
 
@@ -27,7 +29,6 @@ class Deploy(object):
             privateKey=None,
             keystorefile=None,
             keystore_pwd=None,
-            provider=None,
             limit=None,
             price=None,
     ):
@@ -41,9 +42,11 @@ class Deploy(object):
         :param limit: 区块gas上限
         :param price: 区块gas价格
         """
+        provider = dconfig.provider
+
         self.gas_limit = limit if limit else 6700000
         self.gas_price = price if price else Web3.toWei("25", "gwei")
-        self.w3 = Web3(HTTPProvider(provider))
+        self.w3 = Web3(HTTPProvider(dconfig.provider))
         # Rinkeby测试网络使用的是POA权威证明, 需要使用这个中间件才能正常工作
         # http://web3py.readthedocs.io/en/stable/middleware.html#geth-style-proof-of-authority
         if provider.startswith("https://rinkeby"):
@@ -171,7 +174,7 @@ class Deploy(object):
                     cname, tx_hash
                 )
             )
-            receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
+            receipt = self.w3.eth.waitForTransactionReceipt(tx_hash, timeout=600)
             contractAddress = receipt["contractAddress"]
             self.addresses[cname] = contractAddress
             print(
@@ -225,6 +228,5 @@ if __name__ == "__main__":
         config="deploy_contract.json",
         spath="sols",
         privateKey="93072BA0A53E6DA43526B5728B7D029A5ABE7F0E806A8D7A50CEB43423DF1052",
-        provider="https://rinkeby.infura.io/v3/7226f0ad456a4f1189fee961011684ac",
     )
     d.deploy()

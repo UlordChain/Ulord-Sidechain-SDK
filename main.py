@@ -9,4 +9,5 @@ if __name__ == '__main__':
     # cli()
     ucwallet = UCwallet(keystorefile=r"./ucwallet/content_contract/resources/keystore/zza.json",
                         keystore_pwd="a1234567")
+    ucwallet.deploy_contract()
     ucwallet._run_cli()
