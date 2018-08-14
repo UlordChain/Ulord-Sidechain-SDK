@@ -18,7 +18,8 @@ from appdirs import AppDirs
 
 import dconfig
 
-USER_DATA_DIR = AppDirs("UlordPySdk", "").user_data_dir
+USER_DATA_DIR = dconfig.USER_DATA_DIR
+CURR_DIR = dconfig.CURR_DIR
 
 
 class Deploy(object):
@@ -67,7 +68,20 @@ class Deploy(object):
         self.conf = self._load_config(config)
         self.spath = spath
         self.addresses = {}  # 记录发布合约的合约地址
+        self.prepare_dir()  # 创建abi保存地址
 
+    def prepare_dir(self):
+        # 本地
+        if not os.path.isdir(CURR_DIR):
+            os.makedirs(CURR_DIR)
+        abi_dir = os.path.join(CURR_DIR, "abi")
+        if not os.path.isdir(abi_dir):
+            os.mkdir(abi_dir)
+        bin_dir = os.path.join(CURR_DIR, "bin")
+        if not os.path.isdir(bin_dir):
+            os.mkdir(bin_dir)
+
+        # 全局
         if not os.path.isdir(USER_DATA_DIR):
             os.makedirs(USER_DATA_DIR)
         self.abi_dir = os.path.join(USER_DATA_DIR, "abi")
@@ -79,7 +93,6 @@ class Deploy(object):
 
     def _load_config(self, config):
         """ 加载配置文件内容
-
         :param config: 配置文件路径
         """
         with open(config) as f:
@@ -90,23 +103,15 @@ class Deploy(object):
         nonce = self.w3.eth.getTransactionCount(self.account.address) + value
         return nonce
 
-    def _build_transaction(
-            self, func, gas_limit=None, gas_price=None, nonce=None
-    ):
+    def _build_transaction(self, func, gas_limit=None, gas_price=None, nonce=None):
         """将合约方法的调用构建为离线交易对象"""
-        return func.buildTransaction(
-            {
-                "nonce": nonce if nonce else self._nonce(),
-                "gas": gas_limit if gas_limit else self.gas_limit,
-                "gasPrice": gas_price if gas_price else self.gas_price,
-            }
-        )
+        return func.buildTransaction({"nonce": nonce if nonce else self._nonce(),
+                                      "gas": gas_limit if gas_limit else self.gas_limit,
+                                      "gasPrice": gas_price if gas_price else self.gas_price, })
 
     def _sign_and_send_rawtransaction(self, transaction):
         signed = self.account.signTransaction(transaction)
-        tx_hash = Web3.toHex(
-            self.w3.eth.sendRawTransaction(signed.rawTransaction)
-        )
+        tx_hash = Web3.toHex(self.w3.eth.sendRawTransaction(signed.rawTransaction))
         return tx_hash
 
     def deploy(self, **kwargs):
@@ -125,71 +130,51 @@ class Deploy(object):
                     cv = compileds[ck]
                     break
             if not cv:
-                raise ValueError(
-                    "No {} compilation results can be found".format(ck)
-                )
+                raise ValueError("No {} compilation results can be found".format(ck))
             abi_file = os.path.join(self.abi_dir, cname + ".abi")
             bin_file = os.path.join(self.bin_dir, cname + ".bin")
+
             abi_content = cv.get("abi")
             bin_content = cv.get("bin")
-            with open(abi_file, "w") as f:
-                json.dump(abi_content, f)
-            with open(bin_file, "w") as f:
-                json.dump(bin_content, f)
-
-            factory = self.w3.eth.contract(
-                abi=abi_content, bytecode=bin_content
-            )
+            self.save_file(abi_file, abi_content)
+            self.save_file(bin_file, bin_content)
+            factory = self.w3.eth.contract(abi=abi_content, bytecode=bin_content)
             arg = deploy_conf.get(cname)
             if Web3.isAddress(arg):
                 deplpyed_contract_address = Web3.toChecksumAddress(arg)
                 self.addresses[cname] = deplpyed_contract_address
-                print(
-                    "<{} | {}>  has been deployed, continue.".format(
-                        cname, deplpyed_contract_address
-                    )
-                )
+                print("<{} | {}>  has been deployed, continue.".format(cname, deplpyed_contract_address))
                 continue
             contract_address_args, constructor_args = arg
             args = []
             for name in contract_address_args:
                 ca = self.addresses.get(name, None)
                 if not ca:
-                    raise ValueError(
-                        "Cannot find {} contract address".format(name)
-                    )
+                    raise ValueError("Cannot find {} contract address".format(name))
                 args.append(ca)
-            constructor_args = [
-                Web3.toChecksumAddress(c) if Web3.isAddress(c) else c
-                for c in constructor_args
-            ]
+            constructor_args = [Web3.toChecksumAddress(c) if Web3.isAddress(c) else c for c in constructor_args]
             args.extend(constructor_args)
             print("args: {}".format(args))
             print("nonce: {}".format(self._nonce()))
             func = factory.constructor(*args)
             tx = self._build_transaction(func, **kwargs)
             tx_hash = self._sign_and_send_rawtransaction(transaction=tx)
-            print(
-                "Waiting for [{} | {}] contract receipt...".format(
-                    cname, tx_hash
-                )
-            )
+            print("Waiting for [{} | {}] contract receipt...".format(cname, tx_hash))
             receipt = self.w3.eth.waitForTransactionReceipt(tx_hash, timeout=600)
             contractAddress = receipt["contractAddress"]
             self.addresses[cname] = contractAddress
-            print(
-                "{} >>> txHash: {} | contractAddress: {}\n".format(
-                    cname, tx_hash, contractAddress
-                )
-            )
+            print("{} >>> txHash: {} | contractAddress: {}\n".format(cname, tx_hash, contractAddress))
             time.sleep(0.5)  # 预防获取nonce(交易数)时,请求太快而不准确
-        with open(
-                os.path.join(USER_DATA_DIR, "contractAddresses.json"), "w"
-        ) as f:
-            json.dump(self.addresses, f)
+        self.save_file(os.path.join(USER_DATA_DIR, "contractAddresses.json"), self.addresses)
         print("All contracts are deployed.")
 
-        # self.activate(**kwargs)
+    def save_file(self, file, data):
+        with open(file, "w") as f:
+            json.dump(data, f)
+        if USER_DATA_DIR in file:
+            file.replace(USER_DATA_DIR, CURR_DIR)
+            with open(file, "w") as f:
+                json.dump(data, f)
 
     def activate(self, **kwargs):
         """ 激活(添加白名单) """
@@ -205,16 +190,11 @@ class Deploy(object):
             )
             tx = self._build_transaction(func, **kwargs)
             tx_hash = self._sign_and_send_rawtransaction(transaction=tx)
-            print(
-                "Waiting for  <{} | {}>  contract receipt...".format(
-                    cname, tx_hash
-                )
-            )
+            print("Waiting for  <{} | {}>  contract receipt...".format(cname, tx_hash))
             receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
             log_hash = Web3.toHex(receipt.logs[0].topics[0])
-            if (
-                    log_hash == "0x0489f2369368f4688acd0121"
-                                "07ac5a7d98ca739b913449d852f35d871e433cc3"
+            if (log_hash == "0x0489f2369368f4688acd0121"
+                            "07ac5a7d98ca739b913449d852f35d871e433cc3"
             ):
                 print("Activation failed, please check the log.\n")
             else:

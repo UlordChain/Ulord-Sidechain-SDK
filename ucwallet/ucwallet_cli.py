@@ -7,6 +7,7 @@ import sys
 import os
 import logging
 import inspect
+import traceback
 
 import click
 from prompt_toolkit import PromptSession
@@ -37,12 +38,22 @@ class UCwallet():
             **kwargs
         )
         self.udfs_helper = Udfs()
+        self._add_call_function()
         self._load()
+
+    def _add_call_function(self):
+        for name, cont in self.content_contract.contract.items():
+            self.__setattr__(name, self._contract)
 
     def _get_commands(self):
         """get current commands"""
-        self.BASIC_COMMANDS = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if
-                               not command[0].startswith('_')]
+        BASIC_COMMANDS = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if
+                          not command[0].startswith('_')]
+        for name, cont in self.content_contract.contract.items():
+            func_names = list(cont.abi.keys())
+            BASIC_COMMANDS.extend(func_names)
+        # 去重
+        self.BASIC_COMMANDS = list(set(BASIC_COMMANDS))
 
     def _load(self, logfile=os.path.join(PACKAGE_ROOT, 'ucwallet.log')):
         """加载cli一些必要的配置文件"""
@@ -108,6 +119,8 @@ class UCwallet():
                     if commands[0] not in self.BASIC_COMMANDS:
                         self._error('error command {}'.format(commands[0]))
                     else:
+                        # For contract save first word
+                        self.last_command = commands[0]
                         # run command
                         method_to_call = getattr(self, commands[0])
                         self._info(method_to_call(*commands[1:]))
@@ -196,6 +209,10 @@ class UCwallet():
         )
         d.deploy()
         return True
+
+    def _contract(self, function, *param):
+        """使用合约的方法"""
+        return self.content_contract.func_call(self.last_command, function, param)
 
 
 @click.command()
