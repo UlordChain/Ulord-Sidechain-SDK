@@ -30,10 +30,10 @@ class UCwallet():
     log = None
     history = None
 
-    def __init__(self, keystorefile, keystore_pwd, **kwargs):
+    def __init__(self, keystore_file, keystore_pwd, **kwargs):
         """init a ucwallet"""
         self.content_contract = ContentContract(
-            keystorefile=keystorefile,
+            keystore_file=keystore_file,
             keystore_pwd=keystore_pwd,
             **kwargs
         )
@@ -47,13 +47,13 @@ class UCwallet():
 
     def _get_commands(self):
         """get current commands"""
-        BASIC_COMMANDS = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if
+        basic_commands = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if
                           not command[0].startswith('_')]
         for name, cont in self.content_contract.contract.items():
             func_names = list(cont.abi.keys())
-            BASIC_COMMANDS.extend(func_names)
+            basic_commands.extend(func_names)
         # 去重
-        self.BASIC_COMMANDS = list(set(BASIC_COMMANDS))
+        self.BASIC_COMMANDS = list(set(basic_commands))
 
     def _load(self, logfile=os.path.join(PACKAGE_ROOT, 'ucwallet.log')):
         """加载cli一些必要的配置文件"""
@@ -73,7 +73,8 @@ class UCwallet():
         self._get_commands()
         self.COMMANDS = WordCompleter(self.BASIC_COMMANDS)
 
-    def _info(self, info):
+    @staticmethod
+    def _info(info):
         """Print a info to stdout.
 
         The message will be logged in the audit log.
@@ -144,18 +145,20 @@ class UCwallet():
             result += command.ljust(20) + "\t" + method_to_call.__doc__.split(':')[0].strip() + "\n"
         return result
 
-    def set_private_key(self, keystorefile, keystore_pwd):
+    def login_by_key_file(self, keystorefile, keystore_pwd):
         """重新加载私钥文件和密码"""
-        return self.content_contract.set_private_key(keystorefile=keystorefile, keystore_pwd=keystore_pwd)
+        return self.content_contract.set_account_from_wallet(wallet_file=keystorefile, wallet_password=keystore_pwd)
 
-    def transfer_token(self, to_address, value, sum=0):
+    def login_by_private_key(self, key, wallet_password=None):
+        return self.content_contract.set_account_from_privatekey(key, wallet_password)
+
+    def transfer_token(self, to_address, value):
         """交易token"""
-        return self.content_contract.transfer_token(to_address=to_address, value=value, sum=sum)
+        return self.contract("Token", "transfer", to_address, value)
 
     def publish_resource(self, udfs_hash, author_address, price, deposit, t=1):
         """发布资源"""
-        return self.content_contract.publish_resource(udfs_hash=udfs_hash, author_address=author_address, price=price,
-                                                      deposit=deposit, t=t)
+        return self.contract("CenterPublish", "createClaim", udfs_hash, author_address, price, deposit, t)
 
     def transfer_tokens(self, addresses, qualitys):
         """多地址结算"""
@@ -172,11 +175,11 @@ class UCwallet():
 
     def get_token_balance(self, address=None):
         """获取token余额"""
-        return self.content_contract.get_token_balance(address)
+        return self.contract("Token", "balanceOf", address)
 
     def transfer_gas(self, to_address, value):
         """交易gas"""
-        return self.transfer_gas(to_address=to_address, value=value)
+        return self.content_contract.transfer_gas(to_address=to_address, value=value)
 
     def upload(self, file_path):
         """
@@ -205,14 +208,26 @@ class UCwallet():
         d = Deploy(
             config="deploy_contract.json",
             spath="sols",
-            privateKey=self.content_contract._private_key,
+            privateKey=self.content_contract.account.privateKey,
         )
         d.deploy()
+        self.content_contract.reloading_contract()
         return True
 
     def _contract(self, function, *param):
         """使用合约的方法"""
-        return self.content_contract.func_call(self.last_command, function, param)
+        return self.contract(self.last_command, function, param)
+
+    def contract(self, contract_name, function, *param):
+        """使用合约的方法"""
+        return self.content_contract.func_call(contract_name, function, param)
+
+    def creat_wallet(self, passwd):
+        return self.content_contract.create(passwd)
+
+    def get_last_info(self):
+        """获取上次合约调用的详细信息"""
+        return self.content_contract.get_last_call_info()
 
 
 @click.command()
@@ -232,7 +247,7 @@ def cli(keystorefile, keystore_pwd, logfile):
         ))
         sys.exit(-1)
     # 初始化CLI
-    ucwallet = UCwallet(keystorefile=keystorefile, keystore_pwd=keystore_pwd)
+    ucwallet = UCwallet(keystore_file=keystorefile, keystore_pwd=keystore_pwd)
     if logfile:
         ucwallet._load(logfile=logfile)
     ucwallet._run_cli()
@@ -240,5 +255,5 @@ def cli(keystorefile, keystore_pwd, logfile):
 
 if __name__ == '__main__':
     # cli()
-    ucwallet = UCwallet(keystorefile=r"./content_contract/resources/keystore/haibo.json", keystore_pwd="12345678")
+    ucwallet = UCwallet(keystore_file=r"./content_contract/resources/keystore/haibo.json", keystore_pwd="12345678")
     ucwallet._run_cli()

@@ -12,7 +12,10 @@ from pprint import pprint
 from web3.middleware import geth_poa_middleware
 from web3 import Web3
 from web3 import HTTPProvider
+from web3.eth import Eth
 import dconfig
+from eth_account import Account
+from functools import wraps
 
 # ULORD_PROVIDER = dconfig.provider
 # USH_TOKEN_ADDRESS = dconfig.USH_TOKEN_ADDRESS
@@ -21,50 +24,76 @@ import dconfig
 GAS_PRICE = Web3.toWei('2', 'gwei')
 
 
+def check_account(func):
+    """检查在调用转账等操作前, 是否设置了account"""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        self = args[0]
+        if not hasattr(self, "account") or not self.account:
+            raise ValueError(
+                "No account is set, use the set_account_* to set the account, "
+                "or use the create() to new an account."
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 class ContentContract(object):
     """Content contract"""
 
-    def __init__(self, keystorefile, keystore_pwd, ulord_provider=dconfig.provider,
-                 block_gas_limit=dconfig.BLOCK_GAS_LIMIT, gas_price=GAS_PRICE, gas_limit=6700000, ):
+    def __init__(self, keystore_file, keystore_pwd,
+                 private_key=None,
+                 provider=dconfig.provider,
+                 gas_price=GAS_PRICE, ):
         """ 合约方法调用类
-
-        note: 参数有可能会变化, 所以调用时最好指定参数名
-        :param ushtoken_addr:  token address which has deploy to ulord side chain
-        :param centerpublish_addr: a publish smart contract which has deply to ulord side chain
-        :param ulord_provider: Ulord side provider, such as http://xxxx:yyy, which is a RPC endpoint
-        :param keystorefile: user account keystore file, which include user account private key
+        参数有可能会变化, 所以调用时最好指定参数名
+        :param keystore_file: user account keystore file, which include user account private key
         :param keystore_pwd: user account keystore password
+        :param provider: Ulord side provider, such as http://xxxx:yyy, which is a RPC endpoint
         """
-        self.web3 = Web3(HTTPProvider(ulord_provider))
-        self.block_gas_limit = block_gas_limit
+        self.web3 = Web3(HTTPProvider(provider))
+        self.gas_limit = dconfig.BLOCK_GAS_LIMIT
         self.gas_price = gas_price
-        # 私钥
-        self._decrypt_private_key(keystorefile, keystore_pwd)
+
+        self.last_tx = None
+
+        if private_key:
+            self.set_account_from_privatekey(private_key)
+        elif keystore_file and keystore_pwd:
+            self.set_account_from_wallet(keystore_file, keystore_pwd)
 
         # Rinkeby测试网络使用的是POA权威证明, 需要使用这个插件才能正常工作
         # http://web3py.readthedocs.io/en/stable/middleware.html#geth-style-proof-of-authority
-        if ulord_provider.startswith("https://rinkeby"):
+        if provider.startswith("https://rinkeby"):
             self.web3.middleware_stack.inject(geth_poa_middleware, layer=0)
-        try:
-            # 所有合约的abi
-            self._load_abi()
-            # 所有合约
-            self._load_contract()
-        except FileNotFoundError:
-            print("请先部署合约")
+        self.eth = Eth(self.web3)
 
-    def set_private_key(self, keystorefile, keystore_pwd):
-        self._decrypt_private_key(keystorefile, keystore_pwd)
+        # 装载所有合约
+        self.reloading_contract()
 
-    def _decrypt_private_key(self, keystorefile, keystore_pwd):
-        if not os.path.isfile(keystorefile):
-            keystorefile = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'keystore',
-                                        keystorefile)
-        with open(keystorefile) as keyfile:
-            encrypted_key = keyfile.read()
-            # tip: do not save the key or password anywhere, especially into a shared source file
-            self._private_key = self.web3.eth.account.decrypt(encrypted_key, keystore_pwd)
-            self.main_address = self.web3.eth.account.privateKeyToAccount(self._private_key).address
+    def _load_wallet(self, wallet_file):
+        if not os.path.isfile(wallet_file):
+            wallet_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'keystore', wallet_file)
+            if not os.path.isfile(wallet_file):
+                raise ValueError("Wallet file not a valid path.")
+        with open(wallet_file) as wf:
+            wallet = json.load(wf)
+        return wallet
+
+    def _save_wallet(self, wallet, file_name):
+        wf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'keystore',
+                          "{}.json".format(file_name))
+        with open(wf, "w") as f:
+            json.dump(wallet, f)
+
+    def _valid_address(self, address):
+        """验证是否是一个以太坊地址, 用EIP55校验和返回给定的地址。"""
+        if not Web3.isAddress(address):
+            raise ValueError('"{}" not a valid address.'.format(address))
+        address = Web3.toChecksumAddress(address)
+        return address
 
     def _load_abi(self):
         abi_path = os.path.join(dconfig.CURR_DIR, 'abi')
@@ -77,59 +106,50 @@ class ContentContract(object):
                 cp_abi = cp.read()
                 self.abi_files[i[:-4]] = json.loads(cp_abi)
 
-    def _valid_address(self, address):
-        """验证是否是一个以太坊地址, 用EIP55校验和返回给定的地址。"""
-        if not Web3.isAddress(address):
-            raise ValueError('"{}" not a valid address.'.format(address))
-        address = Web3.toChecksumAddress(address)
-        return address
-
     def _nonce(self, value=0):
-        nonce = self.web3.eth.getTransactionCount(self.main_address) + value
+        nonce = self.eth.getTransactionCount(self.account.address) + value
         return nonce
 
+    def _build_transaction(self, func, gas_limit=None, gas_price=None, nonce=None):
+        """将合约方法的调用构建为离线交易对象"""
+        return func.buildTransaction({"nonce": nonce if nonce else self._nonce(),
+                                      "gas": gas_limit if gas_limit else self.gas_limit,
+                                      "gasPrice": gas_price if gas_price else self.gas_price, })
+
     def _sign_and_send_rawtransaction(self, transaction):
-        signed = self.web3.eth.account.signTransaction(transaction, private_key=self._private_key)
-        tx_hash = self.web3.toHex(self.web3.eth.sendRawTransaction(signed.rawTransaction))
+        signed = self.account.signTransaction(transaction)
+        tx_hash = Web3.toHex(self.eth.sendRawTransaction(signed.rawTransaction))
         return tx_hash
 
-    def transfer_token(self, to_address, value, sum=0):
-        """ 代币转账
-        :param to_address: 收钱地址
-        :param value:  金额
-        :return: 交易hash
-        """
-        to_address = self._valid_address(to_address)
-        ush_tx = self.contract["Token"].functions.transfer(to_address, value).buildTransaction({
-            "nonce": self._nonce(), "gas": self.block_gas_limit, "gasPrice": self.gas_price})
-        return self._sign_and_send_rawtransaction(ush_tx)
+    def create(self, wallet_password):
+        """创建一个账户, 保存keyfile到对应目录的json文件中, 且返回私钥和地址"""
+        setattr(self, "account", Account.create())
+        wallet = self.account.encrypt(wallet_password)
+        self._save_wallet(wallet, self.account.address)
+        return dict(
+            privateKey=Web3.toHex(self.account.privateKey),
+            address=self.account.address,
+        )
 
-    def publish_resource(self, udfs_hash, author_address, price, deposit, t=1):
-        """ 资源发布
+    def set_account_from_privatekey(self, private_key, wallet_password=None):
+        """如果有钱包密码, 则创建对应的keystore文件. 反之 ,则不新建"""
+        setattr(self, "account", Account.privateKeyToAccount(private_key))
+        if wallet_password:
+            wallet = self.account.encrypt(wallet_password)
+            self._save_wallet(wallet, self.account.address)
+        return dict(
+            privateKey=Web3.toHex(self.account.privateKey),
+            address=self.account.address,
+        )
 
-        :param udfs_hash: usfs文件系统hash值
-        :param author_address: 资源作者地址
-        :param price: 定价,非负int
-        :param deposit: 押金,非负int
-        :param t: 资源类型, 暂时默认为1
-        """
-        author_address = self._valid_address(author_address)
-        publish_tx = self.contract["CenterPublish"].functions.createClaim(udfs_hash, author_address, price, deposit,
-                                                                          t).buildTransaction({
-            "nonce": self._nonce(), "gas": self.block_gas_limit, "gasPrice": self.gas_price})
-        return self._sign_and_send_rawtransaction(publish_tx)
-
-    def transfer_tokens(self, addresses, qualitys):
-        """ 多地址结算
-
-        :param addresses: List, 结算的地址列表
-        :param qualitys: List, 结算地址列表对应的金额
-        """
-        for i, address in enumerate(addresses):
-            addresses[i] = self._valid_address(address)
-        publish_tx = self.contract["CenterPublish"].functions.mulTransfer(addresses, qualitys).buildTransaction({
-            "nonce": self._nonce(), "gas": self.block_gas_limit, "gasPrice": self.gas_price})
-        return self._sign_and_send_rawtransaction(publish_tx)
+    def set_account_from_wallet(self, wallet_file, wallet_password):
+        """从密钥文件加载accout对象"""
+        wallet = self._load_wallet(wallet_file)
+        private_key = Account.decrypt(wallet, wallet_password)
+        setattr(self, "account", Account.privateKeyToAccount(private_key))
+        return dict(
+            privateKey=Web3.toHex(private_key), address=self.account.address
+        )
 
     def get_for_receipt(self, tx_hash):
         """ 获取交易回执
@@ -147,28 +167,47 @@ class ContentContract(object):
         balance = self.web3.eth.getBalance(self.main_address, 'latest')
         return self.web3.fromWei(balance, 'ether')
 
-    def get_token_balance(self, address=None):
-        """ 获取代币余额
-
-        :param address: 要查询token余额的地址,默认为当前导入私钥用户的余额
-        :return: 代币余额
-        """
-        address = address if address else self.main_address
-        address = self._valid_address(address)
-        return self.contract["Token"].functions.balanceOf(address).call()
-
+    @check_account
     def transfer_gas(self, to_address, value):
-        """
+        """ gas就是侧链的币,
 
         :param to_address: 接收地址
         :param value: 转账金额(wei)
         :return: 交易hash
         """
+        print("nonce:", self._nonce())
         to_address = self._valid_address(to_address)
         payload = {
-            'to': to_address, 'value': value, 'gas': self.block_gas_limit, 'gasPrice': self.gas_price,
-            'nonce': self._nonce()}
+            "to": to_address,
+            "value": value,
+            "gas": self.gas_limit,
+            "gasPrice": self.gas_price,
+            "nonce": self._nonce(),
+        }
         return self._sign_and_send_rawtransaction(payload)
+
+    def transfer_tokens(self, addresses, qualitys):
+        """ 多地址结算
+
+        :param addresses: List, 结算的地址列表
+        :param qualitys: List, 结算地址列表对应的金额
+        """
+        for i, address in enumerate(addresses):
+            addresses[i] = self._valid_address(address)
+        publish_tx = self.contract["CenterPublish"].functions.mulTransfer(addresses, qualitys).buildTransaction({
+            "nonce": self._nonce(), "gas": self.gas_limit, "gasPrice": self.gas_price})
+        return self._sign_and_send_rawtransaction(publish_tx)
+
+    # zza write
+
+    def reloading_contract(self):
+        try:
+            # 所有合约的abi
+            self._load_abi()
+            # 所有合约
+            self._load_contract()
+        except FileNotFoundError:
+            print("请先部署合约")
 
     def _load_contract(self):
         # 读取合约地址
@@ -188,10 +227,8 @@ class ContentContract(object):
             self.contract[contract].view_funcs = view_funcs
             self.contract[contract].abi = abi
 
+    @check_account
     def func_call(self, contract_name, function, param):
-        print("正在调用{}合约的{}函数".format(contract_name, function))
-        if len(param):
-            print("参数为：", param)
         # 找到合约中对应的函数
         contract = self.contract[contract_name]
         try:
@@ -207,14 +244,15 @@ class ContentContract(object):
         if function in self.contract[contract_name].view_funcs:
             return func.call()
         # 需要上链的函数
-        tx = self._build_transaction(func)
-        return self._sign_and_send_rawtransaction(transaction=tx)
-
-    def _build_transaction(self, func, gas_limit=None, gas_price=None, nonce=None):
-        """将合约方法的调用构建为离线交易对象"""
-        return func.buildTransaction({"nonce": nonce if nonce else self._nonce(),
-                                      "gas": gas_limit if gas_limit else self.block_gas_limit,
-                                      "gasPrice": gas_price if gas_price else self.gas_price, })
+        if self.last_tx == None or self.get_for_receipt(self.last_tx) != None:
+            tx = self._build_transaction(func)
+            res = self._sign_and_send_rawtransaction(transaction=tx)
+            self.last_tx = res
+            print("调用成功,交易哈希:")
+            return res
+        else:
+            print("上一个交易未确认，请调用get_for_receipt查看上次交易")
+            return self.last_tx
 
     def format_param(self, param, inputs):
         res = list(param)
@@ -233,6 +271,9 @@ class ContentContract(object):
             else:
                 continue
         return res
+
+    def get_last_call_info(self):
+        return self.get_for_receipt(self.last_tx)
 
 
 if __name__ == '__main__':

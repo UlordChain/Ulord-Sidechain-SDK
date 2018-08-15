@@ -44,24 +44,15 @@ class ContentContract(object):
         self.block_gas_limit = block_gas_limit
         self.gas_price = gas_price
 
-        self._decrypt_private_key(keystorefile, keystore_pwd)
+        self._set_account_from_wallet(keystorefile, keystore_pwd)
         self._load_abi()
         self.ushtoken_contract = self.web3.eth.contract(address=self.ushtoken_addr, abi=self.ushtoken_abi)
         self.centerpublish_contract = self.web3.eth.contract(address=self.centerpublish_addr,
                                                              abi=self.centerpublish_abi)
 
     def set_private_key(self, keystorefile, keystore_pwd):
-        self._decrypt_private_key(keystorefile, keystore_pwd)
+        self._set_account_from_wallet(keystorefile, keystore_pwd)
 
-    def _decrypt_private_key(self, keystorefile, keystore_pwd):
-        if not os.path.isfile(keystorefile):
-            keystorefile = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'keystore',
-                                        keystorefile)
-        with open(keystorefile) as keyfile:
-            encrypted_key = keyfile.read()
-            # tip: do not save the key or password anywhere, especially into a shared source file
-            self._private_key = self.web3.eth.account.decrypt(encrypted_key, keystore_pwd)
-            self.main_address = self.web3.eth.account.privateKeyToAccount(self._private_key).address
 
     def _load_abi(self):
         abi_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'abi')
