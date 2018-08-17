@@ -3,7 +3,13 @@
 ## 快速开始
 
 1. 下载项目
-2. 到项目根目录下
+
+2. 准备一个有币的账户。
+> 如果账户没有币，我们提供了一些测试账户，不定期往里面转一些测试币。  
+> [钱包文件地址](https://github.com/UlordChain/ux-wallet/tree/master/keystore)  
+> 密码统一为12345678    
+
+3. 到项目根目录下
 ```bash
 pip install -r requirements.txt
 
@@ -63,3 +69,5 @@ python3 main.py
 4. `AuthorModule publish [UDFS] [20] [1]`  发布一个资源，获得一个**资源id**。
 5. 其他用户A `UserModule buy [资源id]`购买一个资源，获得**UDFS**。
 6. 其他用户A `downloadhash [UDFS]`,下载该资源。
+
+- [java版本SDK](https://github.com/UlordChain/ux-wallet)
