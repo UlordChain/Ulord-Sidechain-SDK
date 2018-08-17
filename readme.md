@@ -11,6 +11,8 @@ python3 main.py
 > help
 ```
 
+---
+
 ## 功能介绍
 
 - 打印帮助信息 	 `help` 
@@ -22,11 +24,15 @@ python3 main.py
 - 交易gas 	 `transfer_gas` 
 - 多地址结算 	 `transfer_tokens` 
 
+---
+
 ### UDFS
 
 - 修改udfs的ip 	 `set_udfs_ip` 
 - 从udfs上下载文件 	 `downloadhash` 
 - 上传文件获取hash值 	 `upload` 
+
+---
 
 ### 部署一套新的Ushare合约
 [相关文档](./deploy.md)
