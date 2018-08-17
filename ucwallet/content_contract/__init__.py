@@ -85,6 +85,7 @@ class ContentContract(object):
     def _save_wallet(self, wallet, file_name):
         wf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'keystore',
                           "{}.json".format(file_name))
+        print("钱包信息文件地址:\n{}".format(wf))
         with open(wf, "w") as f:
             json.dump(wallet, f)
 
@@ -137,6 +138,7 @@ class ContentContract(object):
         if wallet_password:
             wallet = self.account.encrypt(wallet_password)
             self._save_wallet(wallet, self.account.address)
+        self.main_address = self.web3.eth.account.privateKeyToAccount(private_key).address
         return dict(
             privateKey=Web3.toHex(self.account.privateKey),
             address=self.account.address,
@@ -147,6 +149,7 @@ class ContentContract(object):
         wallet = self._load_wallet(wallet_file)
         private_key = Account.decrypt(wallet, wallet_password)
         setattr(self, "account", Account.privateKeyToAccount(private_key))
+        self.main_address = self.web3.eth.account.privateKeyToAccount(private_key).address
         return dict(
             privateKey=Web3.toHex(private_key), address=self.account.address
         )
@@ -255,7 +258,10 @@ class ContentContract(object):
             return self.last_tx
 
     def format_param(self, param, inputs):
-        res = list(param)
+        if isinstance(param, list):
+            res = param
+        else:
+            res = list(param)
         if len(param) != len(inputs):
             return "参数少了"
         for i in range(len(inputs)):
@@ -273,6 +279,8 @@ class ContentContract(object):
         return res
 
     def get_last_call_info(self):
+        if self.last_tx == None:
+            return None
         return self.get_for_receipt(self.last_tx)
 
 

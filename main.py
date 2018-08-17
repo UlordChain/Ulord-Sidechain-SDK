@@ -33,14 +33,14 @@ def function_test():
     # ERC20
     # 代币转账
     # print(c.contract("Token", "balanceOf", b))
-    rece ="0x3e6cb8575b461bdac2c4aa5700bbaa52586b62c9d2464521083242500a400f4d"
-    rece = c.contract("Token", "transfer", b, 5000)
+    rece = "0x3e6cb8575b461bdac2c4aa5700bbaa52586b62c9d2464521083242500a400f4d"
+    # rece = c.contract("Token", "transfer", b, 5000)
 
-    print(rece)
-    rece = c.contract("Token", "transfer", b, 5000)
-    print(rece)
-    # print(c.contract("Token", "balanceOf", b))
-    print(c.get_for_receipt(rece))
+    # print(rece)
+    # rece = c.contract("Token", "transfer", b, 5000)
+    # print(rece)
+    print(c.contract("Token", "balanceOf", b))
+    print(c.get_receipt(rece))
 
     # # 授权
     # print(c.contract("Token", "approve", b, 1100))
@@ -96,9 +96,13 @@ def main():
     # cli()
     ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
                         keystore_pwd="a1234567")
+    # c = ucwallet.help()
+    # print(c)
     ucwallet._run_cli()
+
+    # function_test()
 
 
 if __name__ == '__main__':
-    # main()
-    function_test()
+    main()
+    # function_test()

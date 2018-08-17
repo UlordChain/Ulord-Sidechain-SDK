@@ -29,7 +29,7 @@ class Udfs():
         self.connect = ipfsapi.connect(host=host, port=port)
         self.log = logging.getLogger("udfs")
 
-    def _config(self, host, port):
+    def config(self, host, port):
         """change connect"""
         self.connect = ipfsapi.connect(host=host, port=port)
 
