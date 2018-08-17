@@ -35,17 +35,21 @@ python3 main.py
 ---
 
 ### 部署一套新的Ushare合约
+
 [相关文档](./deploy.md)
+
 - 部署Ushare合约 	 `deploy_contract`   
 
 ---
 ### 合约调用
+
 - 调用合约 	 `contract 合约名 函数名 参数`   
 - 也可以简写为 `合约名 函数名 参数`   
 - 获取交易回执 	 `get_receipt` 
 - 获取上次合约调用的详细信息 	 `get_last_receipt` 
 
 例如 
+
 - `Token balanceOf 0x...`
 - `contract transfer 0x... 100`
 - `AuthorModule publish 0x... 20 1`
