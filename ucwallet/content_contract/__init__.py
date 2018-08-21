@@ -219,7 +219,10 @@ class ContentContract(object):
         self.contract = {}
         # 装载合约
         for contract, addr in contract_addrs.items():
-            self.contract[contract] = self.web3.eth.contract(address=addr, abi=self.abi_files[contract])
+            try:
+                self.contract[contract] = self.web3.eth.contract(address=addr, abi=self.abi_files[contract])
+            except:
+                continue
             view_funcs = []
             abi = {}
             for func in self.abi_files[contract]:

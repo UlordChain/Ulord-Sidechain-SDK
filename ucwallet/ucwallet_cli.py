@@ -39,16 +39,17 @@ class UCwallet():
             **kwargs
         )
         self.udfs_helper = Udfs()
-
         self.reload_contract()
 
     def reload_contract(self):
-        self._load()
+
         try:
             for name, cont in self.content_contract.contract.items():
                 self.__setattr__(name, self._contract)
-        except:
+        except Exception as err:
+            print(err)
             pass
+        self._load()
 
     def _get_commands(self):
         """get current commands"""
