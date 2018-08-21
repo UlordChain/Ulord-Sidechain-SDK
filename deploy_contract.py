@@ -68,6 +68,7 @@ class Deploy(object):
         self.conf = self._load_config(config)
         self.spath = spath
         self.addresses = {}  # 记录发布合约的合约地址
+        self.addresses["self"] = self.account.address
         self.prepare_dir()  # 创建abi保存地址
 
     def prepare_dir(self):
@@ -117,6 +118,14 @@ class Deploy(object):
     def deploy(self, **kwargs):
         """ 编译和部署合约 """
         deploy_conf = self.conf["deploy"]
+        # 加载账户
+        accounts = deploy_conf['account_address']
+        for name in accounts:
+            account = accounts[name]
+            if account == "self":
+                account = self.account.address
+            self.addresses[name] = Web3.toChecksumAddress(account)
+
         sortkeys = deploy_conf["sortkeys"]
         if not isinstance(sortkeys, list):
             raise ValueError('"sortkeys" value error. ')
@@ -167,12 +176,13 @@ class Deploy(object):
             time.sleep(0.5)  # 预防获取nonce(交易数)时,请求太快而不准确
         self.save_file(os.path.join(USER_DATA_DIR, "contractAddresses.json"), self.addresses)
         print("All contracts are deployed.")
+        self.activate()
 
     def save_file(self, file, data):
         with open(file, "w") as f:
             json.dump(data, f)
         if USER_DATA_DIR in file:
-            file.replace(USER_DATA_DIR, CURR_DIR)
+            file = file.replace(USER_DATA_DIR, CURR_DIR)
             with open(file, "w") as f:
                 json.dump(data, f)
 
@@ -185,20 +195,21 @@ class Deploy(object):
             with open(os.path.join(self.abi_dir, cname + ".abi")) as f:
                 abi = json.load(f)
             contract = self.w3.eth.contract(address=contract_address, abi=abi)
-            func = contract.functions.mulInsertWhite(
-                [self.addresses[addr] for addr in white_address]
-            )
-            tx = self._build_transaction(func, **kwargs)
-            tx_hash = self._sign_and_send_rawtransaction(transaction=tx)
-            print("Waiting for  <{} | {}>  contract receipt...".format(cname, tx_hash))
-            receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
-            log_hash = Web3.toHex(receipt.logs[0].topics[0])
-            if (log_hash == "0x0489f2369368f4688acd0121"
-                            "07ac5a7d98ca739b913449d852f35d871e433cc3"
-            ):
-                print("Activation failed, please check the log.\n")
-            else:
-                print("Activation successful.\n")
+            for addr in white_address:
+                func = contract.functions.mangeWhiteList(
+                    self.addresses[addr], True
+                )
+                tx = self._build_transaction(func, **kwargs)
+                tx_hash = self._sign_and_send_rawtransaction(transaction=tx)
+                print("Waiting for  <{} | {}>  contract receipt...".format(cname, tx_hash))
+                receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
+                log_hash = Web3.toHex(receipt.logs[0].topics[0])
+                if (log_hash == "0x0489f2369368f4688acd0121"
+                                "07ac5a7d98ca739b913449d852f35d871e433cc3"
+                ):
+                    print("Activation failed, please check the log.\n")
+                else:
+                    print("Activation successful.\n")
 
         print("All white list are activated.")
 

@@ -20,49 +20,62 @@
   // deploy: 不是合约时要用到的配置
   // activate: 激活白名单要用到的配置
   {
-      "deploy": {
-              "sortkeys": [  //sortkeys: 要部署合约的顺序
-                  "Token",
-                  "ClaimDB",
-                  "OrderDB",
-                  "Payment",
-                  "CenterPublish",
-                  "AuthorModule",
-                  "AdminModule",
-                  "MulTransfer"
-              ],
+    "deploy": {
+        "account_address": {
+          "S": "self",
+          "A": "0x035eb55d4260455075a8418c4b94ba618c445537",
+          "B": "0x035eb55d4260455075a8418c4b94ba618c445537",
+          "C": "0x035eb55d4260455075a8418c4b94ba618c445537",
+          "D": "0x035eb55d4260455075a8418c4b94ba618c445537"
+        },
+        "sortkeys": [
+          "UshareToken",
+          "ClaimDB",
+          "Payment",
+          "InfoDB",
+          "OrderDB",
+          "CenterPublish",
+          "AuthorModule",
+          "AdminModule",
+          "MulTransfer",
+          "UserModule"
+        ],
           	// 下面为每一个合约部署时, 需要传入的参数, 是一个二位的数组
           	// 数组0: 依赖的前面部署合约的地址, 如果没有, 则为[]
           	// 数组1: 合约构造函数需要的参数
           	// 注意: 所有的价格单位都是wei, 所以在传入值的时候要特别注意
           	// 5 ether == 5 * 10**18  (5乘以10的18次方)
-          	"Token": [[], [50000000000000000000000000, "BlogDemo", 18, "BD"]],  //总量 5千万个BD
-              "ClaimDB": [[], []],
-              "OrderDB": [[], []],
-              "Payment": [["Token"], []],
-              "CenterPublish": [
-                  ["Token", "ClaimDB", "OrderDB", "Payment"],
-                  ["0x761906A41D66Bb5f6c7F7588797C1893fa498396"]
-              ],
-              "AuthorModule": [["CenterPublish"], []],
-              "AdminModule": [["ClaimDB"], []],
-              "MulTransfer": [["Token"], []]
-          	
-          	//如果某个合约单独部署过, 可以直接填写以前部署过的合约地址作为参数
-          	//此时会跳过此合约的部署
-              //"Token": "0x8085eb638fD791BCb0b91fc95F943a32db1845Fe",
-              //"ClaimDB": "0x5d12DD4516DE35a82A0DBd1Aa8568Cb65FcD223D",
-              //"OrderDB": "0x5B6e13c49E647Fab6aDFF0817D8E44DfbffF8f08",
-              //"Payment": "0x7B0a4eccaA9a6e52736b0fb6103FD6e7279Fb2fe",
-              //"CenterPublish": "0x154C72f37ADdC5D1147a6eC12FFed60C6314A4Aa",
-              //"AuthorModule": "0x792B13493Fec7E4D9b41c663897956F89C424d0f",
-              //"AdminModule": "0x6202491D37C9Ed4816E3E29AFBd8BfE2047Ef86d",
-              //"MulTransfer": "0xd95E0806e7063567Fb2dB5023b18765cFE4d09A6"
+      "UshareToken": [[],[]],
+      "TeamToken ":[["UshareToken","A"],[]],
+      "PoolToken  ":[["UshareToken","B"],[]],
+      "ClaimDB": [["S"],[]],
+      "Payment": [["UshareToken","S"],[]],
+      "InfoDB": [["S"],[]],
+      "OrderDB":[["S"],[]],
+      "CenterPublish": [["B","S"],[]],
+      "AuthorModule": [["CenterPublish","InfoDB"],[]],
+      "AdminModule": [["ClaimDB","OrderDB","S"],[]],
+      "MulTransfer": [["UshareToken","S"],[]],
+      "UserModule": [["CenterPublish","InfoDB"],[]]
+    //如果某个合约单独部署过, 可以直接填写以前部署过的合约地址作为参数
+    //此时会跳过此合约的部署
+    //    "UshareToken": "0x7ec2C2f7A9BA7df47B23Df9324e1A24c0c4A1d3f",
+    //    "ClaimDB": "0xDeE49196184a7f69C19Bb8fa5CDB794aeb4aec71",
+    //    "Payment": "0x6edF6E79f80D9121F349B9AbD1964ff75C2fFd4d", 
+    //    "InfoDB": "0x01c4d0F0B2Ea8E1C8Cd0DaCBdDe7A7bA04c4169b", 
+    //    "OrderDB": "0x8B821eA33b70FC9Ba9b22D5175457837F3d58320", 
+    //    "CenterPublish": "0x25B0920dC0dEf57db665F097727d87fB7310087D",
+    //    "AuthorModule": "0x5552Fe772b2e2F65A2238e0e8C17184E06456815",
+    //    "AdminModule": "0x3eE65e9c3B05C4e609C0FD324cD975D5aB8d3066",
+    //    "MulTransfer": "0x1091ae6a3f4CE005D75207736C0e9ccD7bD87B46",
+    //    "UserModule": "0x2B90669B3219643CE328E0519D2d7D25445C68E1"
           },
-      "activate":{
-          "ClaimDB":["CenterPublish"],  // 在ClaimDB中激活CenterPublish白名单成员
-          "CenterPublish":["AuthorModule"],  //同上
-          "Payment":["AuthorModule"]  // 同上
+  "activate": {
+        "Payment": ["CenterPublish"],
+        "ClaimDB": ["CenterPublish","AdminModule"],
+        "OrderDB": ["CenterPublish"],
+        "InfoDB": ["CenterPublish"],
+        "CenterPublish": ["AdminModule","UserModule"]
       }
   }
   ```

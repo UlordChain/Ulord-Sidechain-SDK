@@ -39,21 +39,28 @@ class UCwallet():
             **kwargs
         )
         self.udfs_helper = Udfs()
-        self._add_call_function()
-        self._load()
 
-    def _add_call_function(self):
-        for name, cont in self.content_contract.contract.items():
-            self.__setattr__(name, self._contract)
+        self.reload_contract()
+
+    def reload_contract(self):
+        self._load()
+        try:
+            for name, cont in self.content_contract.contract.items():
+                self.__setattr__(name, self._contract)
+        except:
+            pass
 
     def _get_commands(self):
         """get current commands"""
         basic_commands = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if
                           not command[0].startswith('_')]
         self.basic_commands = copy.deepcopy(basic_commands)
-        for name, cont in self.content_contract.contract.items():
-            func_names = list(cont.abi.keys())
-            basic_commands.extend(func_names)
+        try:
+            for name, cont in self.content_contract.contract.items():
+                func_names = list(cont.abi.keys())
+                basic_commands.extend(func_names)
+        except:
+            pass
         # 去重
         self.BASIC_COMMANDS = list(set(basic_commands))
 
@@ -190,6 +197,7 @@ class UCwallet():
         )
         d.deploy()
         self.content_contract.reloading_contract()
+        self.reload_contract()
         return True
 
     def creat_wallet(self, passwd):

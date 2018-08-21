@@ -210,7 +210,7 @@ class ContentContract(object):
             # 所有合约
             self._load_contract()
         except FileNotFoundError:
-            print("请先部署合约")
+            print("请先使用 deploy_contract 命令部署合约，或手动准备合约地址。")
 
     def _load_contract(self):
         # 读取合约地址

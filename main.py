@@ -16,7 +16,7 @@ def function_test():
     b = "0x4131c1c06af0474e01e2f71bac418b4178aa883a"
     c = "0xa1b2f3649c2477a65ca9755503d54dee27136044"
     c = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
-                 keystore_pwd="a1234567")
+                 keystore_pwd="adsa22525")
     # 创建账户
     # print(c.creat_wallet("123"))
 
@@ -93,14 +93,12 @@ def function_test():
 
 
 def main():
-    # cli()
-    ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
-                        keystore_pwd="a1234567")
-    # c = ucwallet.help()
-    # print(c)
-    ucwallet._run_cli()
-
+    cli()
+    # ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
+    #                     keystore_pwd="sad5515")
+    # ucwallet._run_cli()
     # function_test()
+    pass
 
 
 if __name__ == '__main__':
