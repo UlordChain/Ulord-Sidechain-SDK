@@ -93,10 +93,10 @@ def function_test():
 
 
 def main():
-    # cli()
-    ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
-                        keystore_pwd="a1234567")
-    ucwallet._run_cli()
+    cli()
+    # ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
+    #                     keystore_pwd="ad16")
+    # ucwallet._run_cli()
     # function_test()
     pass
 
