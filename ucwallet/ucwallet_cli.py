@@ -26,7 +26,7 @@ from ucwallet.version import PACKAGE_ROOT
 
 
 class UCwallet():
-    """ucwallet 添加cli方法"""
+    """ucwallet add cli method"""
     logfile = None
     log = None
     history = None
@@ -42,7 +42,7 @@ class UCwallet():
         self.reload_contract()
 
     def reload_contract(self):
-        """重新加载合约文件"""
+        """reload the contract file"""
         try:
             for name, cont in self.content_contract.contract.items():
                 self.__setattr__(name, self._contract)
@@ -52,7 +52,7 @@ class UCwallet():
         self._load()
 
     def _get_commands(self):
-        """get current commands"""
+        """Get current commands"""
         basic_commands = [command[0] for command in inspect.getmembers(self, predicate=inspect.ismethod) if
                           not command[0].startswith('_')]
         self.basic_commands = copy.deepcopy(basic_commands)
@@ -66,7 +66,7 @@ class UCwallet():
         self.BASIC_COMMANDS = list(set(basic_commands))
 
     def _load(self, logfile=os.path.join(PACKAGE_ROOT, 'ucwallet.log')):
-        """加载cli一些必要的配置文件"""
+        """Load some of the necessary configuration files for cli"""
         if self.logfile:
             self.logfile = logfile
         else:
@@ -86,9 +86,7 @@ class UCwallet():
     @staticmethod
     def _info(info):
         """Print a info to stdout.
-
         The message will be logged in the audit log.
-
         """
         # if self.logfile:
         #     self.log.info(info)
@@ -100,9 +98,7 @@ class UCwallet():
 
     def _error(self, error):
         """Print a error to stdout.
-
         The message will be logged in the audit log.
-
         """
         if self.logfile:
             self.log.error(error)
@@ -113,7 +109,7 @@ class UCwallet():
         ))
 
     def _run_cli(self):
-        """交互式shell运行"""
+        """Interactive shell operation"""
         try:
             session = PromptSession()
             while True:
@@ -147,50 +143,46 @@ class UCwallet():
             self._info('Goodbye!')
 
     def _contract(self, function, *param):
-        """调用合约方法 合约名 函数名 参数"""
+        """Calling the same name contract"""
         return self.contract(self.last_command, function, *param)
 
     # command
     def help(self, *args):
-        """打印帮助信息"""
+        """Print help info"""
         result = ''
         for command in self.basic_commands:
             method_to_call = getattr(self, command)
-            result += "{} \t {} \n".format(command.ljust(20), method_to_call.__doc__.split(':')[0].strip())
+            result += "{} \t ---{} \n".format(command.ljust(20), method_to_call.__doc__.split(':')[0].strip())
             # result += "- {} \t `{}` \n".format(method_to_call.__doc__.split(':')[0].strip(), command.strip())
         return result
 
     def set_udfs_ip(self, ip, port):
-        """修改udfs的ip"""
+        """Modifying the IP  and port of the udfs"""
         self.udfs_helper.config(host=ip, port=port)
-        return "更换成功"
+        return "Success"
 
     def login_by_key_file(self, keystorefile, keystore_pwd):
-        """重新加载私钥文件和密码"""
+        """Reload the private key file and password"""
         return self.content_contract.set_account_from_wallet(wallet_file=keystorefile, wallet_password=keystore_pwd)
 
     def login_by_private_key(self, key, wallet_password=None):
-        """重新加载私钥"""
+        """Reload the private key"""
         return self.content_contract.set_account_from_privatekey(key, wallet_password)
 
-    def get_gas_balance(self):
-        """获取侧链余额"""
-        return self.content_contract.get_gas_balance()
+    def get_balance(self, address=None):
+        """Get SideChain balance"""
+        return self.content_contract.get_gas_balance(address)
 
-    def get_receipt(self, tx_hash):
-        """获取交易回执"""
-        return self.content_contract.get_for_receipt(tx_hash=tx_hash)
+    def upload(self, file_path):
+        """Upload the file and get the hash """
+        return self.udfs_helper.upload(file_path)
 
-    def transfer_gas(self, to_address, value):
-        """交易gas"""
-        return self.content_contract.transfer_gas(to_address=to_address, value=value)
-
-    def downloadhash(self, filehash, filepath=None, Debug=False):
-        """从udfs上下载文件"""
+    def download_hash(self, filehash, filepath=None, Debug=False):
+        """Download files from udfs"""
         return self.udfs_helper.downloadhash(filehash, filepath, Debug)
 
     def deploy_contract(self):
-        """部署Ushare合约"""
+        """Deploying Ushare contracts"""
         d = Deploy(
             config="deploy_contract.json",
             spath="sols",
@@ -202,39 +194,37 @@ class UCwallet():
         return True
 
     def creat_wallet(self, passwd):
-        """创建新钱包"""
+        """Create a new wallet"""
         return self.content_contract.create(passwd)
 
+    # 常用api
+
     def get_last_receipt(self):
-        """获取上次合约调用的详细信息"""
+        """Get the details of the last contract call"""
         return self.content_contract.get_last_call_info()
 
     def contract(self, contract_name, function, *param):
-        """调用合约
-        :param contract_name: 合约名
-        :param function: 合约函数
-        :param param: 合约参数
-        :return: 交易哈希
+        """Call contract
+        :return: Transaction hash
         """
         return self.content_contract.func_call(contract_name, function, param)
 
     def exit(self):
-        """退出"""
+        """exit"""
         sys.exit(-1)
 
-    # 常用api
+    def get_receipt(self, tx_hash):
+        """Obtain receipt of transaction"""
+        return self.content_contract.get_for_receipt(tx_hash=tx_hash)
 
-    def upload(self, file_path):
-        """
-        上传文件获取hash值
-        :param file_path: 文件路径（绝对路径）
-        :return: udfs哈希值
-        """
-        return self.udfs_helper.upload(file_path)
+    def transfer_gas(self, to_address, value):
+        """transfer gas"""
+        return self.content_contract.transfer_gas(to_address=to_address, value=value)
 
     def transfer_tokens(self, addresses, qualitys):
-        """多地址结算,地址之间用逗号隔开，请勿打空格"""
+        """Multiple address settlement. Data is separated by commas, not spaces"""
         addresses = addresses.split(',')
+        qualitys = qualitys.split(',')
         return self.content_contract.transfer_tokens(addresses=addresses, qualitys=qualitys)
 
 

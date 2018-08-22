@@ -85,7 +85,7 @@ class ContentContract(object):
     def _save_wallet(self, wallet, file_name):
         wf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources', 'keystore',
                           "{}.json".format(file_name))
-        print("钱包信息文件地址:\n{}".format(wf))
+        print("Wallet file address:\n{}".format(wf))
         with open(wf, "w") as f:
             json.dump(wallet, f)
 
@@ -156,18 +156,18 @@ class ContentContract(object):
 
     def get_for_receipt(self, tx_hash):
         """ 获取交易回执
-
         :param tx_hash: 获取交易回执(只有已打包的交易才有数据,否则返回None)
         :return:
         """
         return self.web3.eth.getTransactionReceipt(tx_hash)
 
-    def get_gas_balance(self):
+    def get_gas_balance(self, address):
         """ 获取侧链余额
-
-        :rtype: 余额(decimal类型)
         """
-        balance = self.web3.eth.getBalance(self.main_address, 'latest')
+        if address is None:
+            address = self.main_address
+        address = self._valid_address(address)
+        balance = self.web3.eth.getBalance(address, 'latest')
         return self.web3.fromWei(balance, 'ether')
 
     @check_account
@@ -187,19 +187,24 @@ class ContentContract(object):
             "gasPrice": self.gas_price,
             "nonce": self._nonce(),
         }
-        return self._sign_and_send_rawtransaction(payload)
+        res = self._sign_and_send_rawtransaction(payload)
+        self.last_tx = res
+        return res
 
     def transfer_tokens(self, addresses, qualitys):
         """ 多地址结算
-
         :param addresses: List, 结算的地址列表
         :param qualitys: List, 结算地址列表对应的金额
         """
         for i, address in enumerate(addresses):
             addresses[i] = self._valid_address(address)
-        publish_tx = self.contract["CenterPublish"].functions.mulTransfer(addresses, qualitys).buildTransaction({
+        for i, quality in enumerate(qualitys):
+            qualitys[i] = int(quality)
+        publish_tx = self.contract["MulTransfer"].functions.mulPayDiff(addresses, qualitys).buildTransaction({
             "nonce": self._nonce(), "gas": self.gas_limit, "gasPrice": self.gas_price})
-        return self._sign_and_send_rawtransaction(publish_tx)
+        res = self._sign_and_send_rawtransaction(publish_tx)
+        self.last_tx = res
+        return res
 
     # zza write
 
@@ -210,7 +215,8 @@ class ContentContract(object):
             # 所有合约
             self._load_contract()
         except FileNotFoundError:
-            print("请先使用 deploy_contract 命令部署合约，或手动准备合约地址。")
+            print("Please use the deploy_contract command to deploy the contract first, or manually prepare the "
+                  "contract address。")
 
     def _load_contract(self):
         # 读取合约地址
@@ -240,7 +246,7 @@ class ContentContract(object):
         try:
             func = contract.functions.__getattribute__(function)
         except AttributeError:
-            return "{}没有{}函数".format(contract_name, function)
+            return "{} there is no {} function".format(contract_name, function)
         # 准备参数
         inputs = contract.abi[function]['inputs']
         param = self.format_param(param, inputs)
@@ -250,14 +256,14 @@ class ContentContract(object):
         if function in self.contract[contract_name].view_funcs:
             return func.call()
         # 需要上链的函数
-        if self.last_tx == None or self.get_for_receipt(self.last_tx) != None:
+        if self.last_tx is None or self.get_for_receipt(self.last_tx) is not None:
             tx = self._build_transaction(func)
             res = self._sign_and_send_rawtransaction(transaction=tx)
             self.last_tx = res
-            print("调用成功,交易哈希:")
+            print("Call successful , transaction hash:")
             return res
         else:
-            print("上一个交易未确认，请调用get_for_receipt查看上次交易")
+            print("The last transaction was not confirmed , please call get_for_receipt to view the last transaction")
             return self.last_tx
 
     def format_param(self, param, inputs):
@@ -266,12 +272,13 @@ class ContentContract(object):
         else:
             res = list(param)
         if len(param) != len(inputs):
-            return "参数少了"
+            return "Less parameters"
         for i in range(len(inputs)):
             _type = inputs[i].get('type')
             if _type.endswith("[]"):
-                return "数组参数不建议用命令行输入，请手动调用remix"
-            elif _type in ['uint256', 'uint8', ]:
+                return "Array arguments are not recommended for command-line input, use http://remix.ethereum.org/ " \
+                       "manually "
+            elif _type in ['uint256', 'uint8']:
                 res[i] = int(param[i])
             elif 'bool' == _type:
                 res[i] = bool(param[i])
@@ -282,21 +289,10 @@ class ContentContract(object):
         return res
 
     def get_last_call_info(self):
-        if self.last_tx == None:
+        if self.last_tx is None:
             return None
         return self.get_for_receipt(self.last_tx)
 
 
 if __name__ == '__main__':
     c = ContentContract('haibo.json', '12345678')
-    c = ContentContract('ulord_testnet_rsk.json', 'tianhe123123')
-
-    # tx_hash = c.transfer_token('0x674F05e1916Abc32a38f40Aa67ae6B503b565999', 1, i)
-    print(c.wait_for_receipt(tx_hash='0x67017be6c13eaa76bf60e377a9a147aeebeef44341d603f3b853fd1b6e4a426b'))
-    # print(c.get_gas_balance())
-    # print(c.get_token_balance("0x411C07f6dE5726A65d107A9B94615daf404c100b"))
-
-    # print(c.publish_resource('123412', '0x674F05e1916Abc32a38f40Aa67ae6B503b565999', 1, 1))
-    #  print(c.transfer_tokens(['0x674f05e1916abc32a38f40aa67ae6b503b565999'], [1]))
-    # print (c.transfer_gas('0x411C07f6dE5726A65d107A9B94615daf404c100b',c.web3.toWei('1', 'ether')))
-    # 0.316084834

@@ -18,7 +18,7 @@ pip install -r requirements.txt
 ```
 python3 main.py
 # 查看帮助文档
-> help
+> ucwallet> help
 ```
 
 ---
