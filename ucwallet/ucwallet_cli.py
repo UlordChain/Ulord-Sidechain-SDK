@@ -42,7 +42,7 @@ class UCwallet():
         self.reload_contract()
 
     def reload_contract(self):
-
+        """重新加载合约文件"""
         try:
             for name, cont in self.content_contract.contract.items():
                 self.__setattr__(name, self._contract)

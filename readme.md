@@ -13,6 +13,7 @@
 ```bash
 pip install -r requirements.txt
 ```
+
 4. 运行程序
 ```
 python3 main.py
@@ -25,61 +26,63 @@ python3 main.py
 ## 功能介绍
 
 - 打印帮助信息  
-> `help`   
+> ucwallet> `help`   
 - 退出  
-> `exit`   
+> ucwallet> `exit`   
 - 创建新钱包  
-> `creat_wallet`   
+> ucwallet> `creat_wallet`   
 - 重新加载私钥文件和密码  
-> `login_by_key_file`   
+> ucwallet> `login_by_key_file`   
 - 重新加载私钥  
-> `login_by_private_key`   
+> ucwallet> `login_by_private_key`   
 - 获取侧链余额  
-> `get_gas_balance`   
+> ucwallet> `get_gas_balance`   
 - 交易gas  
-> `transfer_gas`   
+> ucwallet> `transfer_gas`   
 - 多地址结算  
-> `transfer_tokens`   
+> ucwallet> `transfer_tokens`   
   
 ---  
   
 ### UDFS  
   
 - 修改udfs的ip  
-> `set_udfs_ip`   
+> ucwallet> `set_udfs_ip`   
 - 从udfs上下载文件  
-> `downloadhash`   
+> ucwallet> `downloadhash`   
 - 上传文件获取hash值  
-> `upload`   
+> ucwallet> `upload`   
   
 ---  
   
 ### 部署一套新的Ushare合约  
   
 cli已存在一键部署功能，详细信息请查看[相关文档](./deploy.md)  
-- 部署Ushare合约
-> `deploy_contract`     
+- 部署Ushare合约  
+> ucwallet> `deploy_contract`     
   
 ---  
 ### 合约调用  
   
 - 调用合约  
-> `contract 合约名 函数名 参数`     
-- 也可以简写为 `合约名 函数名 参数`     
+> ucwallet> `contract 合约名 函数名 参数`     
+- 也可以简写为 `合约名 函数名 参数` 
+> ucwallet> `合约名 函数名 参数`   
 - 获取交易回执  
-> `get_receipt`   
+> ucwallet> `get_receipt`   
 - 获取上次合约调用的详细信息  
-> `get_last_receipt`   
+> ucwallet> `get_last_receipt`   
   
 例如   
   
-- `Token balanceOf 0x...`  
-- `contract transfer 0x... 100`  
-- `AuthorModule publish 0x... 20 1`  
+- ucwallet> `Token balanceOf 0x...`  
+- ucwallet> `contract transfer 0x... 100`  
+- ucwallet> `AuthorModule publish 0x... 20 1`  
   
 ---  
 ## 使用场景  
 翻阅[合约API]了解合约功能  
+[]表述需要填写的参数
 1. 使用`deploy_contract`命令一键部署。  
 2. `Token transfer [0x...] [100]`转币  
 3. `upload [filepath]`上传一个文件，获得**UDFS**  
