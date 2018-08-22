@@ -56,9 +56,9 @@ python3 main.py
   
 ### 部署一套新的Ushare合约  
   
-请阅读[相关文档](./deploy.md)后再部署合约。
-  
-- 部署Ushare合约> `deploy_contract`     
+cli已存在一键部署功能，详细信息请查看[相关文档](./deploy.md)  
+- 部署Ushare合约
+> `deploy_contract`     
   
 ---  
 ### 合约调用  
