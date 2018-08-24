@@ -90,5 +90,8 @@ cli已存在一键部署功能，详细信息请查看[相关文档](./deploy.md
 5. 其他用户A `UserModule buy [资源id]`购买一个资源，获得**UDFS**。  
 6. 其他用户A `downloadhash [UDFS]`,下载该资源。  
   
-- [java版本SDK](https://github.com/UlordChain/ux-wallet)
+  
+## java版本 
+- [ucwallet-sdk](https://github.com/UlordChain/Ulord-platform/blob/wallet_cx/upaas/ucwallet-sdk/ReadMe_zh.md)
+- [ucwallet-service](https://github.com/UlordChain/Ulord-platform/blob/wallet_cx/upaas/ucwallet-service/ReadMe_zh.md)
     
