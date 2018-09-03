@@ -9,10 +9,14 @@
 import json
 import os
 from pprint import pprint
+
+import web3
 from web3.middleware import geth_poa_middleware
 from web3 import Web3
 from web3 import HTTPProvider
 from web3.eth import Eth
+from web3.utils.events import get_event_data
+
 import dconfig
 from eth_account import Account
 from functools import wraps
@@ -58,6 +62,7 @@ class ContentContract(object):
         self.gas_price = gas_price
 
         self.last_tx = None
+        self.last_contract = None
 
         if private_key:
             self.set_account_from_privatekey(private_key)
@@ -89,7 +94,7 @@ class ContentContract(object):
         with open(wf, "w") as f:
             json.dump(wallet, f)
 
-    def _valid_address(self, address):
+    def valid_address(self, address):
         """验证是否是一个以太坊地址, 用EIP55校验和返回给定的地址。"""
         if not Web3.isAddress(address):
             raise ValueError('"{}" not a valid address.'.format(address))
@@ -161,12 +166,20 @@ class ContentContract(object):
         """
         return self.web3.eth.getTransactionReceipt(tx_hash)
 
+    def read_last_receipt(self):
+        receipt = self.web3.eth.getTransactionReceipt(self.last_tx)
+        return self.contract[self.last_contract].events.myEvent().processReceipt(receipt)
+
+    def read_receipt(self, contract, tx_hash):
+        receipt = self.web3.eth.getTransactionReceipt(tx_hash)
+        return self.contract[contract].events.myEvent().processReceipt(receipt)
+
     def get_gas_balance(self, address):
         """ 获取侧链余额
         """
         if address is None:
             address = self.main_address
-        address = self._valid_address(address)
+        address = self.valid_address(address)
         balance = self.web3.eth.getBalance(address, 'latest')
         return self.web3.fromWei(balance, 'ether')
 
@@ -179,10 +192,10 @@ class ContentContract(object):
         :return: 交易hash
         """
         print("nonce:", self._nonce())
-        to_address = self._valid_address(to_address)
+        to_address = self.valid_address(to_address)
         payload = {
             "to": to_address,
-            "value": value,
+            "value": Web3.toWei(value, "ether"),
             "gas": self.gas_limit,
             "gasPrice": self.gas_price,
             "nonce": self._nonce(),
@@ -197,7 +210,7 @@ class ContentContract(object):
         :param qualitys: List, 结算地址列表对应的金额
         """
         for i, address in enumerate(addresses):
-            addresses[i] = self._valid_address(address)
+            addresses[i] = self.valid_address(address)
         for i, quality in enumerate(qualitys):
             qualitys[i] = int(quality)
         publish_tx = self.contract["MulTransfer"].functions.mulPayDiff(addresses, qualitys).buildTransaction({
@@ -221,12 +234,13 @@ class ContentContract(object):
     def _load_contract(self):
         # 读取合约地址
         with open(os.path.join(dconfig.CURR_DIR, "contractAddresses.json")) as wf:
-            contract_addrs = json.load(wf)
+            self.contract_addrs = json.load(wf)
         self.contract = {}
         # 装载合约
-        for contract, addr in contract_addrs.items():
+        for contract, addr in self.contract_addrs.items():
             try:
-                self.contract[contract] = self.web3.eth.contract(address=addr, abi=self.abi_files[contract])
+                self.contract[contract] = self.web3.eth.contract(address=self.valid_address(addr),
+                                                                 abi=self.abi_files[contract])
             except:
                 continue
             view_funcs = []
@@ -255,8 +269,10 @@ class ContentContract(object):
         # 静态函数
         if function in self.contract[contract_name].view_funcs:
             return func.call()
+        print(func.call())
         # 需要上链的函数
         if self.last_tx is None or self.get_for_receipt(self.last_tx) is not None:
+            self.last_contract = contract_name
             tx = self._build_transaction(func)
             res = self._sign_and_send_rawtransaction(transaction=tx)
             self.last_tx = res
@@ -283,7 +299,7 @@ class ContentContract(object):
             elif 'bool' == _type:
                 res[i] = bool(param[i])
             elif 'address' == _type:
-                res[i] = self._valid_address(param[i])
+                res[i] = self.valid_address(param[i])
             else:
                 continue
         return res
@@ -292,6 +308,23 @@ class ContentContract(object):
         if self.last_tx is None:
             return None
         return self.get_for_receipt(self.last_tx)
+
+    def transfer_ownership(self, address):
+        func_name = "transferOwnership"
+        for name, con in self.contract.items():
+            try:
+                func = con.functions.__getattribute__(func_name)
+            except AttributeError:
+                print("{} no {} , pass".format(name, func_name))
+                continue
+            print(name, func_name, address)
+            print(self.func_call(name, func_name, [address]))
+            while True:
+                a = self.get_last_call_info()
+                if a:
+                    print(a)
+                    break
+        return True
 
 
 if __name__ == '__main__':

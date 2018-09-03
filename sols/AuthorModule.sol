@@ -51,7 +51,7 @@ contract AuthorModule is ErrorModule{
             return false;
         }
 
-        Center_.updateClaim(_claimId, msg.sender,  _newUdfs, _newPrice);
+        return Center_.updateClaim(_claimId, msg.sender,  _newUdfs, _newPrice);
     }
 
     /**
@@ -94,7 +94,7 @@ contract AuthorModule is ErrorModule{
     function myClaims()
         view public returns(bytes16[])
     {
-        claimsByAddress(msg.sender);
+        return claimsByAddress(msg.sender);
     }
 
     /**
@@ -104,7 +104,7 @@ contract AuthorModule is ErrorModule{
     function claimsByAddress(address _author)
         view public returns(bytes16[])
     {
-        Info_.getClaimsByAuthor(_author);
+        return Info_.getClaimsByAuthor(_author);
     }
 
     /**
@@ -114,7 +114,7 @@ contract AuthorModule is ErrorModule{
     function consumerByClaim(bytes16 _claimId)
         view public returns(address[])
     {
-        Info_.getConsumerByClaim(_claimId);
+        return Info_.getConsumerByClaim(_claimId);
     }
 
     /**

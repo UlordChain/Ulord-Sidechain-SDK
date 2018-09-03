@@ -45,18 +45,18 @@
           	// 数组1: 合约构造函数需要的参数
           	// 注意: 所有的价格单位都是wei, 所以在传入值的时候要特别注意
           	// 5 ether == 5 * 10**18  (5乘以10的18次方)
-      "UshareToken": [[],[]],
-      "TeamToken ":[["UshareToken","A"],[]],
-      "PoolToken  ":[["UshareToken","B"],[]],
-      "ClaimDB": [["S"],[]],
-      "Payment": [["UshareToken","S"],[]],
-      "InfoDB": [["S"],[]],
-      "OrderDB":[["S"],[]],
-      "CenterPublish": [["B","S"],[]],
-      "AuthorModule": [["CenterPublish","InfoDB"],[]],
-      "AdminModule": [["ClaimDB","OrderDB","S"],[]],
-      "MulTransfer": [["UshareToken","S"],[]],
-      "UserModule": [["CenterPublish","InfoDB"],[]]
+    "UshareToken": [[],[]],
+    "TeamToken":[["UshareToken","A","S"],[]],
+    "PoolToken":[["UshareToken","B","S"],[]],
+    "ClaimDB": [["S"],[]],
+    "Payment": [["UshareToken","S"],[]],
+    "InfoDB": [["S"],[]],
+    "OrderDB":[["S"],[]],
+    "CenterPublish": [["B","S"],[]],
+    "AuthorModule": [["CenterPublish","InfoDB"],[]],
+    "AdminModule": [["ClaimDB","OrderDB","S"],[]],
+    "MulTransfer": [["UshareToken","S"],[]],
+    "UserModule": [["CenterPublish","InfoDB"],[]]
     //如果某个合约单独部署过, 可以直接填写以前部署过的合约地址作为参数
     //此时会跳过此合约的部署
     //    "UshareToken": "0x7ec2C2f7A9BA7df47B23Df9324e1A24c0c4A1d3f",

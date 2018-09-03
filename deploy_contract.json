@@ -9,6 +9,8 @@
     },
     "sortkeys": [
       "UshareToken",
+      "TeamToken",
+      "PoolToken",
       "ClaimDB",
       "Payment",
       "InfoDB",
@@ -19,35 +21,56 @@
       "MulTransfer",
       "UserModule"
     ],
-//    "UshareToken": "0x7ec2C2f7A9BA7df47B23Df9324e1A24c0c4A1d3f",
-//    "ClaimDB": "0xDeE49196184a7f69C19Bb8fa5CDB794aeb4aec71",
-//    "Payment": "0x6edF6E79f80D9121F349B9AbD1964ff75C2fFd4d",
-//    "InfoDB": "0x01c4d0F0B2Ea8E1C8Cd0DaCBdDe7A7bA04c4169b",
-//    "OrderDB": "0x8B821eA33b70FC9Ba9b22D5175457837F3d58320",
-//    "CenterPublish": "0x25B0920dC0dEf57db665F097727d87fB7310087D",
-//    "AuthorModule": "0x5552Fe772b2e2F65A2238e0e8C17184E06456815",
-//    "AdminModule": "0x3eE65e9c3B05C4e609C0FD324cD975D5aB8d3066",
-//    "MulTransfer": "0x1091ae6a3f4CE005D75207736C0e9ccD7bD87B46",
-//    "UserModule": "0x2B90669B3219643CE328E0519D2d7D25445C68E1"
+    "UshareToken": [[],[]],
+    "TeamToken":[["UshareToken","A","S"],[]],
+    "PoolToken":[["UshareToken","B","S"],[]],
+    "ClaimDB": [["S"],[]],
+    "Payment": [["UshareToken","S"],[]],
+    "InfoDB": [["S"],[]],
+    "OrderDB":[["S"],[]],
+    "CenterPublish": [["B","S"],[]],
+    "AuthorModule": [["CenterPublish","InfoDB"],[]],
+    "AdminModule": [["ClaimDB","OrderDB","S"],[]],
+    "MulTransfer": [["UshareToken","S"],[]],
+    "UserModule": [["CenterPublish","InfoDB"],[]]
   },
   "activate": {
-    "Payment": [
-      "CenterPublish"
-    ],
-    "ClaimDB": [
-      "CenterPublish",
-      "AdminModule"
-    ],
-    "OrderDB": [
-      "CenterPublish"
-    ],
-    "InfoDB": [
-      "CenterPublish"
-    ],
-    "CenterPublish": [
-      "AdminModule",
-      "UserModule"
-    ]
+    "UshareToken":{
+      "initialize":[
+        ["TeamToken","PoolToken","C","D"]
+      ]
+    },
+    "Payment": {
+      "mangeWhiteList": [
+        ["CenterPublish",true]
+      ]
+    },
+    "ClaimDB": {
+      "mangeWhiteList": [
+        ["CenterPublish",true],
+        ["AdminModule",true]
+      ]
+    },
+    "OrderDB": {
+      "mangeWhiteList": [
+        ["CenterPublish",true]
+      ]
+    },
+    "InfoDB": {
+      "mangeWhiteList": [
+        ["CenterPublish",true]
+      ]
+    },
+    "CenterPublish": {
+      "mangeWhiteList": [
+        ["AdminModule",true],
+        ["AuthorModule",true],
+        ["UserModule",true]
+      ],
+      "initialize": [
+        ["ClaimDB","OrderDB","InfoDB", "Payment"]
+      ]
+    }
   }
 }
 

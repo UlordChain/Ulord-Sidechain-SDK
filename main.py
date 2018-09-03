@@ -5,15 +5,34 @@
 # @Time    : 2018/8/9 0009
 
 from ucwallet.ucwallet_cli import cli, UCwallet
+from eth_abi import decode_single
 
 
 def function_test():
     a = "0x035eb55d4260455075a8418c4b94ba618c445537"
     b = "0x4131c1c06af0474e01e2f71bac418b4178aa883a"
-    c = "0xa1b2f3649c2477a65ca9755503d54dee27136044"
+    # c = "0xa1b2f3649c2477a65ca9755503d54dee27136044"
 
     ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
                         keystore_pwd="a1234567")
+
+    # ucwallet.exit()
+    a = ucwallet.deploy_contract()
+    # c = ucwallet.contract('AuthorModule', 'publish', 'QmYrxZrFWsxtkhaah1CKuhxCnz5GoQgFPgkYXgmbLueEX3', '0', '1')
+    # print(c)
+    # while True:
+    #     s = ucwallet.get_last_receipt()
+    #     print(s)
+    #     if s is not None:
+    #         break
+    # ucwallet.exit()
+    #
+    # c = ucwallet.contract('AuthorModule', 'claimsByAddress', a)
+    # c = ucwallet.contract('AuthorModule', 'myClaims')
+    # c = ucwallet.contract('UshareToken', 'balanceOf', a)
+    # print(c)
+    ucwallet.exit()
+
     # 帮助信息
     print(ucwallet.help())
 
@@ -28,7 +47,7 @@ def function_test():
     print(ucwallet.download_hash(f['Hash']))
 
     # 创建新钱包
-    print(ucwallet.creat_wallet("b123456789"))
+    print(ucwallet.create_wallet("b123456789"))
 
     # 私钥登录
     private_key = "0x93072ba0a53e6da43526b5728b7d029a5abe7f0e806a8d7a50ceb43423df1052"
@@ -70,11 +89,11 @@ def function_test():
 def main():
     cli()
     # ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
-    #                     keystore_pwd="asd123")
+    #                     keystore_pwd="asd")
     # ucwallet._run_cli()
     pass
 
 
 if __name__ == '__main__':
-    main()
-    # function_test()
+    # main()
+    function_test()

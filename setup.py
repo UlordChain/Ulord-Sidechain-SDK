@@ -12,7 +12,7 @@ requires = [
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 # Get the long description from the README file
-with open(os.path.join(base_dir, 'readme.md'), 'rb') as f:
+with open(os.path.join(base_dir, 'README.md'), 'rb') as f:
     long_description = f.read().decode('utf-8')
 
 setup(

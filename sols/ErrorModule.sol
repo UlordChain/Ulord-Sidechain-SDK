@@ -14,20 +14,20 @@ contract ErrorModule {
         InvalidStr,       // 无效的字符串
         InvalidClaimId,   // 无效的资源id
         InvalidUdfs,      // 无效的UDFS
-        InvalidObj,       // 无效的对象，购买一个已放弃的资源
+        InvalidObj,       // 无效的对象，购买一个已放弃的资源  6
 
         Unsupported,      // 未授权
         ServStop,         // 服务停止
 
         ObjNotExist,      // 对象不存在
-        ObjExist,         // 对象已存在
+        ObjExist,         // 对象已存在    10
 
         ScantToken,       // 代币余额不充足
         ScantCredit,      // 代币授权额度不足
         Insolvent,        // 支付能力不足
 
 
-        Insufficient,     // 白名单权限不足
+        Insufficient,     // 白名单权限不足   14
         PermissionDenied, // 管理权限不足, 管理员权限
         IdCertifyFailed,  // 身份认证失败，作者身份认证
 

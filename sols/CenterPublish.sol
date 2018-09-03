@@ -111,11 +111,11 @@ contract CenterPublish is WhiteMange{
             }
         }
 
-        // 判断资源是否存在
-        if (claimDb_.isExist(_claimId) == false){
-            emit LogError(RScorr.ObjExist);
-            return false;
-        }
+//        // 判断资源是否存在
+//        if (claimDb_.isExist(_claimId) == false){
+//            emit LogError(RScorr.ObjExist);
+//            return false;
+//        }
 
         require(claimDb_.createClaim(_claimId, _udfs, _author, _price, claimDeposit_, _type));
 

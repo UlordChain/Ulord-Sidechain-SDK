@@ -45,7 +45,7 @@ class Deploy(object):
         """
         provider = dconfig.provider
 
-        self.gas_limit = limit if limit else 6700000
+        self.gas_limit = limit if limit else dconfig.GAS_LIMIT
         self.gas_price = price if price else Web3.toWei("25", "gwei")
         self.w3 = Web3(HTTPProvider(dconfig.provider))
         # Rinkeby测试网络使用的是POA权威证明, 需要使用这个中间件才能正常工作
@@ -142,7 +142,6 @@ class Deploy(object):
                 raise ValueError("No {} compilation results can be found".format(ck))
             abi_file = os.path.join(self.abi_dir, cname + ".abi")
             bin_file = os.path.join(self.bin_dir, cname + ".bin")
-
             abi_content = cv.get("abi")
             bin_content = cv.get("bin")
             self.save_file(abi_file, abi_content)
@@ -163,7 +162,7 @@ class Deploy(object):
                 args.append(ca)
             constructor_args = [Web3.toChecksumAddress(c) if Web3.isAddress(c) else c for c in constructor_args]
             args.extend(constructor_args)
-            print("args: {}".format(args))
+            print("{} args: {}".format(cname, args))
             print("nonce: {}".format(self._nonce()))
             func = factory.constructor(*args)
             tx = self._build_transaction(func, **kwargs)
@@ -190,26 +189,32 @@ class Deploy(object):
         """ 激活(添加白名单) """
         print("\nContracts are being activate(add white list)...\n")
         activate_conf = self.conf["activate"]
-        for cname, white_address in activate_conf.items():
+        for cname, func_list in activate_conf.items():
             contract_address = self.addresses[cname]
             with open(os.path.join(self.abi_dir, cname + ".abi")) as f:
                 abi = json.load(f)
             contract = self.w3.eth.contract(address=contract_address, abi=abi)
-            for addr in white_address:
-                func = contract.functions.mangeWhiteList(
-                    self.addresses[addr], True
-                )
-                tx = self._build_transaction(func, **kwargs)
-                tx_hash = self._sign_and_send_rawtransaction(transaction=tx)
-                print("Waiting for  <{} | {}>  contract receipt...".format(cname, tx_hash))
-                receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
-                log_hash = Web3.toHex(receipt.logs[0].topics[0])
-                if (log_hash == "0x0489f2369368f4688acd0121"
-                                "07ac5a7d98ca739b913449d852f35d871e433cc3"
-                ):
-                    print("Activation failed, please check the log.\n")
-                else:
-                    print("Activation successful.\n")
+            print("activate {} contracting".format(cname))
+            for func_name, param_s in func_list.items():
+                # for one function
+                print("call {} , will do {} call ".format(func_name, len(param_s)))
+                for param_o in param_s:
+                    func = contract.functions.__getattribute__(func_name)
+                    # add param
+                    param_list = []
+                    for param in param_o:
+                        p = self.addresses.get(param)
+                        if p is None:
+                            p = param
+                        param_list.append(p)
+                    func = func(*param_list)
+                    tx = self._build_transaction(func, **kwargs)
+                    tx_hash = self._sign_and_send_rawtransaction(transaction=tx)
+                    print("input : {}".format(param_o))
+                    print("input change to : {}".format(param_list))
+                    print("Waiting for  <{} | {}>  contract receipt...".format(cname, tx_hash))
+                    receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
+                    print("call {} successful. \nreceipt : {}\n".format(func_name, receipt))
 
         print("All white list are activated.")
 

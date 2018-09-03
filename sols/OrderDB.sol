@@ -116,9 +116,9 @@ contract OrderDB is WhiteMange {
      */
     function isExist(bytes32 _orderId) view public returns(bool){
         if (store_[_orderId].time != 0) {
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**

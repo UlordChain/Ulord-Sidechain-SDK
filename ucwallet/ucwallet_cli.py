@@ -193,7 +193,7 @@ class UCwallet():
         self.reload_contract()
         return True
 
-    def creat_wallet(self, passwd):
+    def create_wallet(self, passwd):
         """Create a new wallet"""
         return self.content_contract.create(passwd)
 
@@ -226,6 +226,9 @@ class UCwallet():
         addresses = addresses.split(',')
         qualitys = qualitys.split(',')
         return self.content_contract.transfer_tokens(addresses=addresses, qualitys=qualitys)
+
+    # def transfer_ownership(self, address):
+    #     return self.content_contract.transfer_ownership(address)
 
 
 @click.command()
