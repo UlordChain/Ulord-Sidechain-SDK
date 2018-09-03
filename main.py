@@ -14,7 +14,7 @@ def function_test():
     # c = "0xa1b2f3649c2477a65ca9755503d54dee27136044"
 
     ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
-                        keystore_pwd="a1234567")
+                        keystore_pwd="a12345")
 
     # ucwallet.exit()
     a = ucwallet.deploy_contract()
@@ -95,5 +95,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    function_test()
+    main()
+    # function_test()
