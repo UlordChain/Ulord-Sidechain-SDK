@@ -96,5 +96,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    # function_test()
+    # main()
+    function_test()

@@ -17,6 +17,8 @@ BLOCK_GAS_LIMIT = 6800000
 GAS_LIMIT = 6800000
 USER_DATA_DIR = AppDirs("UlordPySdk", "").user_data_dir
 CURR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sols")
+
+print(USER_DATA_DIR,CURR_DIR)
 if os.path.isdir(USER_DATA_DIR) is False:
     import shutil
     shutil.copytree(CURR_DIR, USER_DATA_DIR)
