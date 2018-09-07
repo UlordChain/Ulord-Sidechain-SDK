@@ -1,74 +1,47 @@
 {
   "deploy": {
     "account_address": {
-      "S": "self",
-      "A": "0x035eb55d4260455075a8418c4b94ba618c445537",
-      "B": "0x035eb55d4260455075a8418c4b94ba618c445537",
-      "C": "0x035eb55d4260455075a8418c4b94ba618c445537",
-      "D": "0x035eb55d4260455075a8418c4b94ba618c445537"
+      "S": "self"
     },
     "sortkeys": [
-      "UshareToken",
-      "TeamToken",
-      "PoolToken",
       "ClaimDB",
-      "Payment",
       "InfoDB",
       "OrderDB",
-      "CenterPublish",
+      "CenterControl",
       "AuthorModule",
       "AdminModule",
       "MulTransfer",
       "UserModule"
     ],
-    "UshareToken": [[],[]],
-    "TeamToken":[["UshareToken","A","S"],[]],
-    "PoolToken":[["UshareToken","B","S"],[]],
     "ClaimDB": [["S"],[]],
-    "Payment": [["UshareToken","S"],[]],
     "InfoDB": [["S"],[]],
     "OrderDB":[["S"],[]],
-    "CenterPublish": [["B","S"],[]],
-    "AuthorModule": [["CenterPublish","InfoDB"],[]],
-    "AdminModule": [["ClaimDB","OrderDB","S"],[]],
-    "MulTransfer": [["UshareToken","S"],[]],
-    "UserModule": [["CenterPublish","InfoDB"],[]]
+    "CenterControl": [["ClaimDB","S"],[]],
+    "AuthorModule": [["CenterControl","InfoDB"],[]],
+    "UserModule": [["CenterControl","InfoDB"],[]],
+    "AdminModule": [["ClaimDB","OrderDB","S"],[]]
   },
   "activate": {
-    "UshareToken":{
-      "initialize":[
-        ["TeamToken","PoolToken","C","D"]
-      ]
-    },
-    "Payment": {
-      "mangeWhiteList": [
-        ["CenterPublish",true]
-      ]
-    },
     "ClaimDB": {
       "mangeWhiteList": [
-        ["CenterPublish",true],
+        ["CenterControl",true],
         ["AdminModule",true]
       ]
     },
     "OrderDB": {
       "mangeWhiteList": [
-        ["CenterPublish",true]
+        ["CenterControl",true]
       ]
     },
     "InfoDB": {
       "mangeWhiteList": [
-        ["CenterPublish",true]
+        ["CenterControl",true]
       ]
     },
-    "CenterPublish": {
+    "CenterControl": {
       "mangeWhiteList": [
-        ["AdminModule",true],
         ["AuthorModule",true],
         ["UserModule",true]
-      ],
-      "initialize": [
-        ["ClaimDB","OrderDB","InfoDB", "Payment"]
       ]
     }
   }

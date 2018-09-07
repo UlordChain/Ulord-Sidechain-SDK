@@ -3,8 +3,9 @@ pragma solidity ^0.4.24;
 import "./WhiteMange.sol";
 
 /**
- * @title 用于查询
- * @dev 数据写入需要白名单权限
+ * @title InfoDB
+ * @dev Used to query.
+ * @notice Whitelist permission is required for data writing
  */
 contract InfoDB is WhiteMange{
 
@@ -15,18 +16,18 @@ contract InfoDB is WhiteMange{
 
     struct stUserInfo{
         //uint256 orderCnt;
-        bytes32[] orderList;   // 购买订单
-        bytes16[] goodsList;   // 购买过的资源
+        bytes32[] orderList;   // All orders from user.
+        bytes16[] goodsList;   // Users have purchased all resources.
     }
 
     struct stAuthorInfo{
-        bytes16[] claims;       //作者发布过的资源
+        bytes16[] claims;       // All resources published by the author
     }
 
     struct stClaimInfo{
-        mapping(address => bytes32) bought; // 查询一个用户在这个资源下的订单
-        address[] buyers;                   // 已购买的用户地址
-        bytes32[] orderList;                // 买该资源的订单
+        mapping(address => bytes32) bought; // Query the order by a user on this resource.
+        address[] buyers;                   // All users from resources.
+        bytes32[] orderList;                // All orders for this resource
     }
 
     mapping(address => stUserInfo) user_;
@@ -38,11 +39,11 @@ contract InfoDB is WhiteMange{
     }
 
     /**
-     * @dev 记录一笔订单
-     * @param _oId   bytes32  : 订单ID
-     * @param _cid   bytes16  : 资源ID
-     * @param _buyer address  : 购买者地址
-     * @return       bool     : 操作成功返回true
+     * @dev Record an order.
+     * @param _oId   bytes32  : Orders index(OrderID).
+     * @param _cid   bytes16  : Resource index(ClaimID).
+     * @param _buyer address  : Buyer's address
+     * @return       bool     : The successful call returns true.
      */
     function insertOrder(bytes32 _oId, bytes16 _cid, address _buyer)
         public
@@ -51,7 +52,7 @@ contract InfoDB is WhiteMange{
         if (whitelist_[msg.sender] != true){
             emit LogError(RScorr.Insufficient);
             return false;
-        } /* Check the caller for white list permissions */
+        } // Check the caller's whitelist permission.
 
         user_[_buyer].orderList.push(_oId);
         user_[_buyer].goodsList.push(_cid);
@@ -64,10 +65,10 @@ contract InfoDB is WhiteMange{
     }
 
     /**
-     * @dev 记录一个资源产生
-     * @param _cid    bytes16  : 资源ID
-     * @param _author address  : 作者地址
-     * @return        bool     : 操作成功返回true
+     * @dev Record a resource generation.
+     * @param _cid    bytes16  : Resource index(ClaimID).
+     * @param _author address  : Authors' address
+     * @return        bool     : The successful call returns true.
      */
     function insertClaim(bytes16 _cid, address _author)
         public
@@ -76,7 +77,7 @@ contract InfoDB is WhiteMange{
         if (whitelist_[msg.sender] != true){
             emit LogError(RScorr.Insufficient);
             return false;
-        } /* Check the caller for white list permissions */
+        } // Check the caller's whitelist permission.
 
         author_[_author].claims.push(_cid);
         return true;
@@ -87,8 +88,8 @@ contract InfoDB is WhiteMange{
     /////////////////////////
 
     /**
-     * @dev 查询作者已发布过的所有资源
-     * @param _author  address   : 作者地址
+     * @dev Query all resources the author has published.
+     * @param _author  address   : Author's address
      * @return         bytes16[] : claimID组成的bytes16的列表
      */
     function getClaimsByAuthor(address _author) view public returns(bytes16[]){
@@ -96,8 +97,8 @@ contract InfoDB is WhiteMange{
     }
 
     /**
-     * @dev 查询用户已购买的所有资源
-     * @param _user    address   : 作者地址
+     * @dev Query all resources that the user has purchased.
+     * @param _user    address   : Author's address
      * @return         bytes16[] : claimID组成的bytes16的列表
      */
     function getClaimsByUser(address _user) view public returns(bytes16[]){
@@ -106,7 +107,7 @@ contract InfoDB is WhiteMange{
 
     /**
      * @dev 查询用户的所有的订单
-     * @param _buyer   address   : 用户地址
+     * @param _buyer   address   : User's address
      * @return         bytes32[] : orderID组成的bytes32的列表
      */
     function getOrdersByUser(address _buyer) view public returns(bytes32[]){
@@ -131,8 +132,8 @@ contract InfoDB is WhiteMange{
 
 
     /**
-     * @dev 查询制定用户是否购买了资源
-     * @param _buyer address : 用户地址
+     * @dev Query whether a particular user has purchased a resource
+     * @param _buyer address : User's address
      * @param _cid bytes16   : 资源id
      * @return bool          : 已购买返还true，未购买返回false;
      */

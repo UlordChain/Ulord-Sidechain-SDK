@@ -15,13 +15,13 @@ import "./OrderDB.sol";
  *  4. OrderDB 的删除订单的权限
  *  5. 修改资源押金数量的权限
  */
-contract AdminModule is WhiteMange {
+contract AdminModule is WhiteMange{
     ClaimDB public Claim_;
     OrderDB public Order_;
     //CenterPublish public Center;
 
-    constructor (address _claimDb, address _orderDb, address _owner)
-    public
+    constructor (address _claimDb, address _orderDb, address _owner) 
+        public 
     {
         owner = _owner;
         Claim_ = ClaimDB(_claimDb);
@@ -36,12 +36,12 @@ contract AdminModule is WhiteMange {
      * @return           bool      : 操作成功返回true
      */
     function mangeDestWhite(address _contract, address _target, bool _allow) onlyAdmin
-    public
-    returns (bool)
+        public 
+        returns(bool)
     {
         // 检测权限
         WhiteMange _destCon = WhiteMange(_contract);
-        if (_destCon.admin() != address(this)) {
+        if (_destCon.admin() != address(this)){
             emit LogError(RScorr.PermissionDenied);
             return false;
         }
@@ -58,23 +58,10 @@ contract AdminModule is WhiteMange {
      * @return           bool     : 删除成功返回true
      */
     function deleteClaim(bytes16 _claimId) onlyAdmin
-    public
-    returns (bool)
+        public
+        returns(bool)
     {
         return Claim_.deleteClaim(_claimId);
-    }
-
-    /**
-     * @dev    屏蔽资源，待审核后，恢复或删除资源
-     * @param _claimId bytes16  :  资源ID
-     * @param _allow   bool     :  屏蔽资源设置为true
-     * @return         bool     :  操作成功返回true
-     */
-    function forbindonClaim(bytes16 _claimId, bool _allow) onlyAdmin
-    public
-    returns (bool)
-    {
-        return Claim_.updateClaimForbidden(_claimId, _allow);
     }
 
 
@@ -84,8 +71,8 @@ contract AdminModule is WhiteMange {
      * @return             bool     :  操作成功返回true
      */
     function changeClaimDB(address _newClaimDB) onlyAdmin
-    public
-    returns (bool)
+        public 
+        returns(bool)
     {
         require(_newClaimDB != 0);
         Claim_ = ClaimDB(_newClaimDB);
@@ -99,9 +86,9 @@ contract AdminModule is WhiteMange {
      * @param  _orderId  bytes32  :  订单ID
      * @return           bool     :  操作成功返回true
      */
-    function deleteOrder(bytes32 _orderId) onlyAdmin
-    public
-    returns (bool)
+    function deleteOrder(bytes32 _orderId) onlyAdmin 
+        public  
+        returns(bool)
     {
         return Order_.remove(_orderId);
     }
@@ -111,9 +98,9 @@ contract AdminModule is WhiteMange {
      * @param  _newOrderDB address :  新的orderDB合约地址
      * @return             bool    :  操作成功返回true
      */
-    function changeOrderDB(address _newOrderDB) onlyAdmin
-    public
-    returns (bool)
+    function changeOrderDB(address _newOrderDB) onlyAdmin 
+        public 
+        returns(bool)
     {
         require(_newOrderDB != 0);
         Order_ = OrderDB(_newOrderDB);
@@ -124,51 +111,47 @@ contract AdminModule is WhiteMange {
 
     // Null
 
-    /****************** PayMent  ********************/
-    /**
-     * @dev    暂停或者恢复支付合约的支付功能
-     * @param _pay       address :  支付合约Payment的合约地址
-     * @param _stopState bool    :  true代表暂停支付功能，false代表恢复支付功能
-     * @return           bool    :  操作成功返回true
-     */
-    function pausePay(address _pay, bool _stopState) onlyAdmin
-    public
-    returns (bool)
-    {
-        if (isAdmin(_pay)) {
-            // "02329a29": "pause(bool)
-            require(_pay.call(bytes4(0x02329a29), _stopState));
-            return true;
-        } else {
-            emit LogError(RScorr.PermissionDenied);
-            return false;
-        }
-    }
 
     /****************** center  ********************/
     /**
      * @dev 修改资源的押金
-     * @param _center  address : centerPublish合约地址
+     * @param _center  address : CenterControl合约地址
      * @param _deposit uint256 : 新的押金数量
      * @return         bool    : 操作成功返回true
      */
     function setClaimDeposit(address _center, uint256 _deposit) onlyAdmin
-    public
-    returns (bool)
+        public
+        returns(bool)
     {
-        if (isAdmin(_center)) {
+        if (isAdmin(_center)){
             // "f5bade66": "setDeposit(uint256)"
             require(_center.call(bytes4(0xf5bade66), _deposit));
             return true;
-        } else {
+        }else{
             emit LogError(RScorr.PermissionDenied);
             return false;
         }
     }
 
+
+    function deductAdFee(address _center, bytes16 _cid, uint256 _value) onlyAdmin
+        public
+        returns(bool)
+    {
+        if (isAdmin(_center)){
+            //  "227771c0": "deductAdFee(bytes16,uint256)",
+            require(_center.call(bytes4(0x227771c0), _cid, _value));
+            return true;
+        }else{
+            emit LogError(RScorr.PermissionDenied);
+            return false;
+        }
+    }
+
+
+
     // 增加一个更换合约是转移admin权限的函数的函数。、
 
-    WhiteMange internal Whtie_;
     /**
      * @dev 转移本合约的管理权限给新的管理员
      * @notice 只能由owner操作
@@ -177,16 +160,15 @@ contract AdminModule is WhiteMange {
      * @return          bool      ：迁移成功返回true
      */
     function migrate(address _newAdmin, address[] _contract) onlyOwner
-    public
-    returns (bool)
+        public
+        returns(bool)
     {
         uint256 _len = _contract.length;
-        for (uint256 i = 0; i < _len; i++) {
-            Whtie_ = WhiteMange(_contract[i]);
-            require(Whtie_.admin() == address(this), "Sorry, you entered an invalid contract address");
-            Whtie_.transferAdminship(_newAdmin);
+        for (uint256 i = 0; i < _len; i++){
+            WhiteMange _addr = WhiteMange(_contract[i]);
+            require(_addr.admin() == address(this), "Sorry, you entered an invalid contract address");
+            _addr.transferAdminship(_newAdmin);
         }
-        return true;
     }
 
     /**
@@ -194,10 +176,10 @@ contract AdminModule is WhiteMange {
      * @param _contract address : 待验证的合约地址。
      * @return          bool    : 是管理员amdin则返回true
      */
-    function isAdmin(address _contract) view public returns (bool){
-        if (WhiteMange(_contract).admin() == address(this)) {
+    function isAdmin(address _contract) view public returns(bool){
+        if (WhiteMange(_contract).admin() == address(this)){
             return true;
-        } else {
+        }else{
             return false;
         }
 

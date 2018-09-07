@@ -1,11 +1,13 @@
 pragma solidity ^0.4.24;
 
 import "./WhiteMange.sol";
+import "./SafeMath.sol";
+
 import "./ClaimDB.sol";
-import "./Payment.sol";
 import "./OrderDB.sol";
 import "./InfoDB.sol";
 
+//TODO: TO modify ERC20 to GAS;
 
 /*
     支付验证：
@@ -21,9 +23,9 @@ import "./InfoDB.sol";
  * @dev 本合约起一个纽带作用
  * @notice 合约中
  */
-contract CenterPublish is WhiteMange{
-
-    Payment public pay_;
+contract CenterControl is WhiteMange{
+    using SafeMath for uint256;
+    //Payment public pay_;
 
     ClaimDB public claimDb_;
     OrderDB public orderDb_;
@@ -36,9 +38,9 @@ contract CenterPublish is WhiteMange{
     event LogSimpleClaim(address indexed author, string udfs);
 
     /**
-     * @dev 构造函数
+     * @dev constructor
      * @param _pool  address : 押金池地址
-     * @param _owner address : 合约拥有者地址
+     * @param _owner address : The address of the contract owner.
      */
     constructor (address _pool, address _owner)
         public
@@ -48,27 +50,45 @@ contract CenterPublish is WhiteMange{
     }
 
     /**
-     * @dev 初始化函数,关联本项目相关合约
-     * @notice 只能由管理员调用一次
-     * @param _claim address : 资源数据合约地址
-     * @param _order address : 订单数据合约地址
-     * @param _info  address : 信息数据合约地址
-     * @param _pay   address : 支付合约的地址
-     * @return       bool    : 操作成功返回true
+     * @dev Initialization function,related contract of the project
+     * @notice Can only be called once by the owner.
+     * @param _claim address : ClaimDB's contract address
+     * @param _order address : OrderDB's contract address
+     * @param _info  address : InfoDB's contract address
+     * @return       bool    : The successful call returns true.
      */
-    function initialize(address _claim, address _order, address _info, address _pay) onlyAdmin
+    function initialize(address _claim, address _order, address _info) onlyAdmin
         public
         returns(bool)
     {
-        require(pay_ == address(0), "You can only call it once");
+        require(claimDb_ == address(0), "You can only call it once");
         require(_claim != address(0)  && _order  != address(0)
-            &&   _info != address(0)  && _pay    != address(0), "contract address cannot be 0.");
+                && _info != address(0) , "contract address cannot be 0.");
 
-        pay_ = Payment(_pay);
         claimDb_ = ClaimDB(_claim);
         orderDb_ = OrderDB(_order);
         infoDb_  = InfoDB(_info);
 
+        return true;
+    }
+
+    // TODO：收的押金的数量，把钱转移到一个更安全的地方。
+    // 岂不是可以随便拿走这笔钱么
+    function () payable public {
+        // 只允许迁移的时候，管理才能动这笔钱。
+    }
+
+//    /// withdraw
+//    function withdraw()  public onlyOwner returns(bool){
+//        (msg.sender).transfer(address(this).balance);
+//        return true;
+//    }
+
+
+    // TODO：迁移合约，升级的时候使用。
+    function migrate(address _newCenter) public onlyOwner returns(bool){
+        // 迁移的是时候可能需要一些其他的操作，待添加
+        _newCenter.transfer(address(this).balance);
         return true;
     }
 
@@ -99,25 +119,10 @@ contract CenterPublish is WhiteMange{
         if (claimDb_.isExist(_claimId)){
             emit LogError(RScorr.ObjExist);
             return false;
-        } /* 查询资源是否已存在 */
+        } /* Check if the resource exists */
 
-        // 收押金
-        if (claimDeposit_ != 0){
-            if (pay_.isPayable(msg.sender, claimDeposit_)){
-                require(pay_.payFrom(msg.sender, claimPool_, claimDeposit_));
-            }else{
-                emit LogError(RScorr.Insolvent);
-                return false;
-            }
-        }
 
-//        // 判断资源是否存在
-//        if (claimDb_.isExist(_claimId) == false){
-//            emit LogError(RScorr.ObjExist);
-//            return false;
-//        }
-
-        require(claimDb_.createClaim(_claimId, _udfs, _author, _price, claimDeposit_, _type));
+        require(claimDb_.insertClaim(_claimId, _udfs, _author, _price, claimDeposit_, _type));
 
         require(infoDb_.insertClaim(_claimId, _author));
 
@@ -130,49 +135,39 @@ contract CenterPublish is WhiteMange{
      * @param _customer address : 购买者地址
      * @param _claimId  bytes16 : 商品ID
      * @param _payer    address : 支付者地址
-     * @param _cost     uint256 : 实际支付，为0时，按照定价支付
+     * @param _price    uint256 : 定价
      * @return          bool    : 操作成功返回true
      */
-    function createOrder(address _customer,bytes16 _claimId, address _payer, uint256 _cost)
+    function createOrder(address _customer,bytes16 _claimId, uint256 _value, address _payer, uint256 _price)
         public
         returns(bool)
     {
-        /* Check the caller's whitelist permission */
         if (whitelist_[msg.sender] != true){
             emit LogError(RScorr.Insufficient);
             return false;
-        }
+        } // Check the caller's whitelist permission.
 
-        if (!claimDb_.isSaleable(_claimId)){
+        if (!claimDb_.isSaleable(_claimId) || claimDb_.getClaimType(_claimId) == 2){
             emit LogError(RScorr.InvalidObj);
             return false;
-        }
+        } //
 
-        // 获取资源的消息
-        (address _author,uint256 _price) = claimDb_.getGoodsInfo(_claimId);
+
+        if(_value < _price){
+            emit LogError(RScorr.Insolvent);
+            return false;
+        }
 
         // 生成订单id
         bytes32 _orderId = bytes32(keccak256(abi.encodePacked(_customer , _claimId)));
 
-        /* When the value of _cost is zero, charge according to resource pricing */
-        if (_cost == 0){
-            _cost = _price;
-        }
-
-        if(_checkBuy(_orderId, _payer, _cost) == false){
+        // 生成订单
+        if (orderDb_.insert(_orderId, _customer, _claimId, _price, _payer, _price)){
+            require(infoDb_.insertOrder(_orderId, _claimId, _payer));
+            return true;
+        }else{
             return false;
         }
-
-        // 支付代币
-        require(pay_.payFrom(_payer, _author, _cost));
-
-        // 生成订单
-        require(orderDb_.insert(_orderId, _customer, _claimId, _price, _payer, _cost));
-
-        // 建立索引信息
-        require(infoDb_.insertOrder(_orderId, _claimId, _payer));
-
-        return true;
     }
 
     ///@dev 更新资源内容和价格
@@ -180,7 +175,7 @@ contract CenterPublish is WhiteMange{
         public
         returns(bool)
     {
-        if (whitelist_[msg.sender] != true){ 
+        if (whitelist_[msg.sender] != true){
           emit LogError(RScorr.Insufficient);
           return false;
         } // 检查调用者白名单权限
@@ -193,7 +188,7 @@ contract CenterPublish is WhiteMange{
         public
         returns(bool)
     {
-        if (whitelist_[msg.sender] != true){ 
+        if (whitelist_[msg.sender] != true){
           emit LogError(RScorr.Insufficient);
           return false;
         } // 检查调用者白名单权限
@@ -206,12 +201,12 @@ contract CenterPublish is WhiteMange{
         public
         returns(bool)
     {
-        if (whitelist_[msg.sender] != true){ 
+        if (whitelist_[msg.sender] != true){
           emit LogError(RScorr.Insufficient);
           return false;
         } // 检查调用者白名单权限
 
-        return claimDb_.updateClaimPrice(_cid, _author, _newprice);
+        return claimDb_.updateClaimPricing(_cid, _author, _newprice);
     }
 
     ///@dev 放弃资源，作者模块只能放弃，管理员能取消资源放弃。
@@ -219,14 +214,52 @@ contract CenterPublish is WhiteMange{
         public
         returns(bool)
     {
-        if (whitelist_[msg.sender] != true){ 
+        if (whitelist_[msg.sender] != true){
           emit LogError(RScorr.Insufficient);
           return false;
         } // 检查调用者白名单权限
 
-        return claimDb_.updateClaimWaive(_cid, _author, _waive);
+        uint256 _deposit = claimDb_.getDeposit(_cid);
+
+        if(claimDb_.updateClaimWaive(_cid, _author, _waive)){
+            //退押金
+            // 获取押金的数量和对象，对象已有。
+            if(_deposit != 0){
+                _author.transfer(_deposit);
+            }
+            return true;
+        }
+        return false;
     }
 
+
+    mapping(bytes16 => uint256) public adFee_;
+    function renewAD(bytes16 _cid, uint256 _value) public returns(bool){
+        if (whitelist_[msg.sender] != true){
+          emit LogError(RScorr.Insufficient);
+          return false;
+        } // 检查调用者白名单权限
+
+        if (claimDb_.getClaimType(_cid) != 2){
+            emit LogError(RScorr.InvalidObj);
+            return false;
+        } //
+
+        adFee_[_cid] = adFee_[_cid].add(_value);
+        return true;
+    }
+
+    function deductAdFee(bytes16 _cid, uint256 _value) public returns(bool){
+        // TODO：需要限制身份
+        if(msg.sender != owner && msg.sender != admin){
+            emit LogError(RScorr.PermissionDenied);
+            return false;
+        } // 检查管理员权限
+
+        require(adFee_[_cid] >= _value);
+        adFee_[_cid] = adFee_[_cid].sub(_value);
+        return true;
+    }
 
     /**
      * @dev 设置发布资源的押金
@@ -276,30 +309,46 @@ contract CenterPublish is WhiteMange{
     }
 
 
-    /**
-     * @dev 检查订单生成条件和付款人能否购买。
-     * @param _oID   bytes32 : 订单ID
-     * @param _payer address ：付款人地址
-     * @param _cost  uint256 : 付款金额
-     * @return bool          : 满足支付条件返回true
-     */
-    function _checkBuy(bytes32 _oID, address _payer, uint256 _cost)
-        internal
-        returns(bool)
+    ///@dev 获取订单的基本信息
+    function getGoodsInfo(bytes16 _claimId)
+        view
+        public
+        returns(address author, uint256 pricing)
     {
-        // 判断订单是否存在，避免反复购买
-        if (orderDb_.isExist(_oID)){
-            emit LogError(RScorr.ObjExist);
-            return false;
-        }
-
-        // 检查付款者的购买能力
-        if (!pay_.isPayable(_payer, _cost)){
-            emit LogError(RScorr.Insolvent);
-            return false;
-        }
-
-        return true;
+        return claimDb_.getGoodsInfo(_claimId);
     }
+
+
+    ///////////////////
+    /// Internal
+    ///////////////////
+
+
+//    /**
+//     * @dev 检查订单生成条件和付款人能否购买。
+//     * @param _oID   bytes32 : 订单ID
+//     * @param _payer address ：付款人地址
+//     * @param _cost  uint256 : 付款金额
+//     * @return bool          : 满足支付条件返回true
+//     */
+//    function _checkBuy(bytes32 _oID, address _payer, uint256 _cost)
+//        internal
+//        returns(bool)
+//    {
+//        // 判断订单是否存在，避免反复购买
+//        if (orderDb_.isExist(_oID)){
+//            emit LogError(RScorr.ObjExist);
+//            return false;
+//        }
+//
+//        // 检查付款者的购买能力
+//        if (!pay_.isPayable(_payer, _cost)){
+//            emit LogError(RScorr.Insolvent);
+//            return false;
+//        }
+//
+//        return true;
+//    }
+
 
 }

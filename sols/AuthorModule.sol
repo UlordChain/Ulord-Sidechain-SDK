@@ -1,12 +1,14 @@
 pragma solidity ^0.4.24;
 
-import "./CenterPublish.sol";
+import "./CenterControl.sol";
 import "./ErrorModule.sol";
 import "./InfoDB.sol";
-
+import "./SafeMath.sol";
 
 contract AuthorModule is ErrorModule{
-    CenterPublish public Center_;
+    using SafeMath for uint256;
+
+    CenterControl public Center_;
     InfoDB public Info_;
 
     /**
@@ -15,7 +17,7 @@ contract AuthorModule is ErrorModule{
      * @param _info   address : 信息数据合约地址
      */
     constructor (address _center, address _info) public {
-        Center_ = CenterPublish(_center);
+        Center_ = CenterControl(_center);
         Info_   = InfoDB(_info);
     }
 
@@ -28,14 +30,46 @@ contract AuthorModule is ErrorModule{
      * @param _type      uint8   : 资源的类型
      * @return           bool    : 操作成功返回 true
      */
-    function publish(string _udfs, uint256 _price, uint8 _type) public returns(bool){
+    function publish(string _udfs, uint256 _price, uint8 _type)
+        public
+        payable
+        returns(bool)
+    {
         if(_hashFilter(_udfs) == false){
             emit LogError(RScorr.InvalidUdfs);
             return false;
         }
 
+        //uint256 _value = msg.value;
+        uint256 _deposit = getClaimDeposit();
+
+        if (_deposit != 0){
+            if(msg.value < _deposit){
+                emit LogError(RScorr.Insolvent);
+                return false;
+            }
+        }
+
         //向中心出版社发布一个资源， 这种方式是由平台层发布资源。
-        return Center_.createClaim(_udfs, msg.sender, _price, _type, true);
+        //return Center_.createClaim(_udfs, msg.sender, _price, _type, true);
+        if (Center_.createClaim(_udfs, msg.sender, _price, _type, true)){
+            if (_deposit != 0){
+                address(Center_).transfer(_deposit);           // 收押金
+                msg.sender.transfer(msg.value.sub(_deposit)); // 退回多余的GAS
+            }
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+
+    function renewAD(bytes16 _claimId) payable public returns(bool){
+        if (Center_.renewAD(_claimId, msg.value)){
+            address(Center_).transfer(msg.value);
+        }else{
+            msg.sender.transfer(msg.value);
+        }
     }
 
     /**
@@ -61,7 +95,7 @@ contract AuthorModule is ErrorModule{
      */
     function abandonClaim(bytes16 _claimId) public returns(bool){
         return Center_.updateClaimWaive(_claimId, msg.sender, true);
-    }
+    } //TODO : 放弃的资源，处理问题，如果作者想要重新发布。。会提示资源存在？How?
 
     /**
      * @dev 更新价格。
@@ -81,11 +115,16 @@ contract AuthorModule is ErrorModule{
      */
     function transferClaim(bytes16 _claimId, address _newAuthor) public returns(bool){
         return Center_.updateClaimAuthor(_claimId, msg.sender, _newAuthor);
-    }
+    } //TODO:能交易已放弃的资源，得改
 
     /////////////////////////
     /// View
     /////////////////////////
+
+
+    function getClaimDeposit() view public returns(uint256){
+        return Center_.claimDeposit_();
+    }
 
     /**
      * @dev 查询调用者发布过的所有资源

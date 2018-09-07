@@ -14,11 +14,12 @@ def function_test():
     # c = "0xa1b2f3649c2477a65ca9755503d54dee27136044"
 
     ucwallet = UCwallet(keystore_file=r"./ucwallet/content_contract/resources/keystore/zza.json",
-                        keystore_pwd="a12345")
+                        keystore_pwd="a1234567")
 
     # ucwallet.exit()
     a = ucwallet.deploy_contract()
-    # c = ucwallet.contract('AuthorModule', 'publish', 'QmYrxZrFWsxtkhaah1CKuhxCnz5GoQgFPgkYXgmbLueEX3', '0', '1')
+    # c = ucwallet.contract("AuthorModule", "Center_")
+    # print(c)
     # print(c)
     # while True:
     #     s = ucwallet.get_last_receipt()

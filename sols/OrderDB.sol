@@ -45,16 +45,15 @@ contract OrderDB is WhiteMange {
         public
         returns(bool)
     {
-        /* Check the caller for white list permissions */
         if (whitelist_[msg.sender] != true){ 
             emit LogError(RScorr.Insufficient);
             return false;
-        }
+        } // Check the caller's whitelist permission.
 
         if (isExist(_orderId)){
             emit LogError(RScorr.ObjExist);
             return false;
-        }
+        } // Check if the resource exists.
 
         store_[_orderId] = Order({
             time     : now, 
@@ -69,7 +68,6 @@ contract OrderDB is WhiteMange {
 
         emit LogNewOrder(_orderId, _claimId, _customer, _payer);
         return true;
-
     }
 
     /**

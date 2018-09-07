@@ -1,13 +1,13 @@
 pragma solidity ^0.4.24;
 
-import "./StrFilter.sol";
-import "./CenterPublish.sol";
+import "./SafeMath.sol";
+import "./CenterControl.sol";
 import "./InfoDB.sol";
 
 contract UserModule{
-    //using StrFilter for string;
+    using SafeMath for uint256;
 
-    CenterPublish public Center_;
+    CenterControl public Center_;
     InfoDB public Info_;
 
     /**
@@ -16,19 +16,21 @@ contract UserModule{
      * @param _info   address : 信息数据合约地址
      */
     constructor (address _center, address _info) public {
-        Center_ = CenterPublish(_center);
+        Center_ = CenterControl(_center);
         Info_   = InfoDB(_info);
     }
-
 
     /**
      * @dev 购买资源
      * @param _claimId bytes16 : 资源id
      * @return         bool    : 操作成功返回true
      */
-    function buy(bytes16 _claimId) public returns(bool){
-        // 先获取资源的信息
-        return Center_.createOrder(msg.sender, _claimId, msg.sender, 0);
+    function buy(bytes16 _claimId)
+        public
+        payable
+        returns(bool)
+    {
+        return _buyCore(msg.sender, _claimId, msg.sender, msg.value);
     }
 
     /**
@@ -37,24 +39,32 @@ contract UserModule{
      * @param _donee   address : 受赠地址
      * @return         bool    : 操作成功返回true
      */
-    function buyTo(bytes16 _claimId, address _donee) public returns(bool){
-        return Center_.createOrder(_donee, _claimId, msg.sender, 0);
+    function buyTo(bytes16 _claimId, address _donee)
+        public
+        payable
+        returns(bool)
+    {
+        return _buyCore(_donee, _claimId, msg.sender, msg.value);
+    }
+
+    function _buyCore(address _customer, bytes16 _cid, address _payer, uint256 _value)
+        internal
+        returns(bool)
+    {
+
+        (address _author,uint256 _price) = Center_.getGoodsInfo(_cid);
+
+        if (Center_.createOrder(_customer, _cid, _value, _payer, _price) == true){
+            _author.transfer(_price);
+            _payer.transfer(_value.sub(_price));
+            return true;
+        }else{
+            _payer.transfer(_value);
+            return false;
+        }
     }
 
 
-
-//    /**
-//     * @dev 使用其他地址购买
-//     * @dev 付款人需要有足够的授权额度
-//     * @param _claimId bytes16 : 资源id
-//     * @param _payer   address : 付款地址
-//     */
-//    function buyFrom(bytes16 _claimId, address _payer) public returns(bool){
-//        Center_.createOrder(msg.sender, _claimId, _payer, 0);
-//        return true;
-//    }
-//    扣除不了授权额度。实现困难。。
-////////////////////////////////
 
     /////////////////////////
     /// View
