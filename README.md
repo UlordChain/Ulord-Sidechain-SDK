@@ -21,9 +21,7 @@ python3 main.py
 > ucwallet> help
 ```
 
-
-[领取测试链币](http://testnet.usc.ulord.one:8088/faucet)  
-http://testnet.usc.ulord.one:8088 -> USC Faucet 
+ [领取测试链币](http://testnet.usc.ulord.one:8088/faucet)  
 
 
 ---
