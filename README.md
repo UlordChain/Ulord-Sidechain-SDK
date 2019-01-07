@@ -4,10 +4,12 @@
 
 1. 下载项目
 
-2. 准备一个有币的账户。
+2. 准备一个有币的账户
 > 如果账户没有币，我们提供了一些测试账户，不定期往里面转一些测试币。  
 > [钱包文件地址](https://github.com/UlordChain/ux-wallet/tree/master/keystore)  
 > 密码统一为12345678    
+
+或者可以在 [这里](http://testnet.usc.ulord.one:8088/faucet)  领取测试链币。
 
 3. 到项目根目录下安装依赖包：
 ```bash
@@ -20,8 +22,6 @@ python3 main.py
 # 查看帮助文档
 > ucwallet> help
 ```
-
- [领取测试链币](http://testnet.usc.ulord.one:8088/faucet)  
 
 
 ---
