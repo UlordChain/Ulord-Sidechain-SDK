@@ -28,7 +28,7 @@ py-solc==3.1.0
 pycryptodome==3.6.4
 Pygments==2.2.0
 pypiwin32==223
-pywin32==223
+pywin32==301
 requests==2.19.1
 rlp==1.0.1
 semantic-version==2.6.0
